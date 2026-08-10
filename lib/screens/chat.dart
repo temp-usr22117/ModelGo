@@ -1,7 +1,28 @@
-// lib/screens/chat.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/model_provider.dart';
+import 'providers/model_provider.dart';
+import 'services/download_service.dart';  // Add this line
+import 'package:flutter/services.dart';  // Add this line
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => ModelProvider(),
+      child: MaterialApp(
+        title: 'Chat App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: ChatScreen(),
+      ),
+    );
+  }
+}
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -10,14 +31,30 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
+  final _scrollController = ScrollController();
 
-  void _sendPrompt(BuildContext context) {
+  void _sendPrompt(BuildContext context) async {
     final modelProvider = Provider.of<ModelProvider>(context, listen: false);
     String prompt = _textController.text;
     _textController.clear();
+
     // Call native bridge to send the prompt and handle response
-    // For now, we'll just print the prompt
-    print('Sending prompt: $prompt');
+    final channel = MethodChannel('com.example.llmclient/native');
+    try {
+      String response = await channel.invokeMethod('infer', {'prompt': prompt});
+      setState(() {
+        // Add the response to chat history
+        _addMessage(context, 'User: $prompt\nAssistant: $response');
+      });
+    } catch (e) {
+      print('Error during inference: $e');
+    }
+  }
+
+  void _addMessage(BuildContext context, String message) {
+    // Add the message to chat history
+    // For now, we'll just print it
+    print(message);
   }
 
   @override
@@ -30,6 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
               child: ListView.builder(
+                controller: _scrollController,
                 itemCount: 5, // Dummy data
                 itemBuilder: (context, index) {
                   return ListTile(

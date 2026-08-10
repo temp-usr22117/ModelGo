@@ -15,4 +15,10 @@ public class MainActivity extends AppCompatActivity {
         // Load the native library
         System.loadLibrary("native-lib");
     }
+
+    public static void sendResponse(String response) {
+        // Handle the inference response in Flutter
+        // For now, we'll just print it
+        System.out.println("Inference Response: " + response);
+    }
 }

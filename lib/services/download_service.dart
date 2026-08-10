@@ -1,7 +1,5 @@
-// lib/services/download_service.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/model_provider.dart';
+import 'providers/model_provider.dart';
 
 class DownloadService with ChangeNotifier {
   final ModelProvider _modelProvider;
@@ -15,6 +13,7 @@ class DownloadService with ChangeNotifier {
     print('Starting download of $modelId from $url');
     await Future.delayed(Duration(seconds: 5));
     print('Download complete for $modelId');
+
     _modelProvider.downloadComplete(modelId);
   }
 

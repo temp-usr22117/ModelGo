@@ -1,9 +1,8 @@
-// lib/main.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/model_provider.dart';
-import 'services/download_service.dart';
+import 'services/download_service.dart';  // Add this line
+import 'package:flutter/services.dart';  // Add this line
 
 void main() {
   runApp(MyApp());
@@ -13,148 +12,80 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => DownloadService(),
+      create: (context) => ModelProvider(),
       child: MaterialApp(
-        title: 'LLM Client',
+        title: 'Chat App',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: HomeScreen(),
+        home: ChatScreen(),
       ),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  final _textController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  void _sendPrompt(BuildContext context) async {
+    final modelProvider = Provider.of<ModelProvider>(context, listen: false);
+    String prompt = _textController.text;
+    _textController.clear();
+
+    // Call native bridge to send the prompt and handle response
+    final channel = MethodChannel('com.example.llmclient/native');
+    try {
+      String response = await channel.invokeMethod('infer', {'prompt': prompt});
+      setState(() {
+        // Add the response to chat history
+        _addMessage(context, 'User: $prompt\nAssistant: $response');
+      });
+    } catch (e) {
+      print('Error during inference: $e');
+    }
+  }
+
+  void _addMessage(BuildContext context, String message) {
+    // Add the message to chat history
+    // For now, we'll just print it
+    print(message);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final modelProvider = Provider.of<ModelProvider>(context);
-    final downloadService = Provider.of<DownloadService>(context);
-
     return Scaffold(
-      appBar: AppBar(title: Text('LLM Client')),
+      appBar: AppBar(title: Text('Chat')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(
-              decoration: InputDecoration(hintText: 'Search models...'),
-              onChanged: (query) {
-                modelProvider.filterModels(query);
-              },
-            ),
-            SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
-                itemCount: modelProvider.filteredModels.length,
+                controller: _scrollController,
+                itemCount: 5, // Dummy data
                 itemBuilder: (context, index) {
-                  final model = modelProvider.filteredModels[index];
                   return ListTile(
-                    title: Text(model.name),
-                    subtitle: Text('${model.size} MB'),
-                    leading: Icon(Icons.arrow_downward),
-                    onTap: () async {
-                      await downloadService.startDownload(model.url, model.name);
-                    },
+                    title: Text('Message $index'),
                   );
                 },
               ),
+            ),
+            TextField(
+              controller: _textController,
+              decoration: InputDecoration(hintText: 'Type a message...'),
+              onSubmitted: (value) {
+                _sendPrompt(context);
+              },
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class DownloadService with ChangeNotifier {
-  final ModelProvider _modelProvider;
-
-  DownloadService(this._modelProvider) {}
-
-  Future<void> startDownload(String url, String modelId) async {
-    // Simulate downloading a file
-    // In real life, you would use WorkManager on Android and URLSessionDownloadTask on iOS
-    // For now, we'll just print the download details
-    print('Starting download of $modelId from $url');
-    await Future.delayed(Duration(seconds: 5));
-    print('Download complete for $modelId');
-
-    _modelProvider.downloadComplete(modelId);
-  }
-
-  void downloadComplete(String modelId) {
-    // Notify listeners that the download is complete
-    notifyListeners();
-  }
-}
-
-class ModelProvider with ChangeNotifier {
-  List<Model> _models = [];
-  List<Model> _filteredModels = [];
-
-  ModelProvider() {
-    loadModels();
-  }
-
-  List<Model> get models => _models;
-  List<Model> get filteredModels => _filteredModels;
-
-  void loadModels() {
-    // Load the list of models from a static JSON file or remote manifest
-    // For simplicity, let's assume it's hardcoded for now
-    _models = [
-      Model(
-        name: 'TinyLlama-1.1B-Chat',
-        size: 500,
-        url: 'https://example.com/models/TinyLlama-1.1B-Chat-v0.3-GGUF.gguf',
-        isMobileOptimized: true,
-      ),
-      Model(
-        name: 'Phi-1.5-mini',
-        size: 400,
-        url: 'https://example.com/models/Phi-1.5-mini-gguf.gguf',
-        isMobileOptimized: true,
-      ),
-    ];
-    _filteredModels = _models;
-    notifyListeners();
-  }
-
-  void filterModels(String query) {
-    _filteredModels = _models.where((model) => model.name.toLowerCase().contains(query.toLowerCase())).toList();
-    notifyListeners();
-  }
-
-  Future<void> downloadModel(Model model) async {
-    final channel = MethodChannel('com.example.llmclient/native');
-    await channel.invokeMethod('loadModel', {'path': model.url});
-    notifyListeners();
-  }
-}
-
-class Model {
-  final String name;
-  final double size;
-  final String url;
-  bool isMobileOptimized;
-
-  Model({
-    required this.name,
-    required this.size,
-    required this.url,
-    required this.isMobileOptimized,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-          (other is Model &&
-              name == other.name &&
-              size == other.size &&
-              url == other.url &&
-              isMobileOptimized == other.isMobileOptimized);
-
-  @override
-  int get hashCode => name.hashCode ^ size.hashCode ^ url.hashCode ^ isMobileOptimized.hashCode;
 }

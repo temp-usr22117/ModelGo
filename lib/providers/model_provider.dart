@@ -1,40 +1,10 @@
-// lib/providers/model_provider.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/download_service.dart';
-
-class Model {
-  final String name;
-  final double size;
-  final String url;
-  bool isMobileOptimized;
-
-  Model({
-    required this.name,
-    required this.size,
-    required this.url,
-    required this.isMobileOptimized,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-          (other is Model &&
-              name == other.name &&
-              size == other.size &&
-              url == other.url &&
-              isMobileOptimized == other.isMobileOptimized);
-
-  @override
-  int get hashCode => name.hashCode ^ size.hashCode ^ url.hashCode ^ isMobileOptimized.hashCode;
-}
 
 class ModelProvider with ChangeNotifier {
   List<Model> _models = [];
   List<Model> _filteredModels = [];
-  DownloadService _downloadService;
 
-  ModelProvider(this._downloadService) {
+  ModelProvider() {
     loadModels();
   }
 
@@ -66,9 +36,30 @@ class ModelProvider with ChangeNotifier {
     _filteredModels = _models.where((model) => model.name.toLowerCase().contains(query.toLowerCase())).toList();
     notifyListeners();
   }
+}
 
-  Future<void> downloadModel(Model model) async {
-    await _downloadService.startDownload(model.url, model.name);
-    notifyListeners();
-  }
+class Model {
+  final String name;
+  final double size;
+  final String url;
+  bool isMobileOptimized;
+
+  Model({
+    required this.name,
+    required this.size,
+    required this.url,
+    required this.isMobileOptimized,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          (other is Model &&
+              name == other.name &&
+              size == other.size &&
+              url == other.url &&
+              isMobileOptimized == other.isMobileOptimized);
+
+  @override
+  int get hashCode => name.hashCode ^ size.hashCode ^ url.hashCode ^ isMobileOptimized.hashCode;
 }

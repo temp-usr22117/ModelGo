@@ -17,3 +17,24 @@ Java_com_example_llmclient_MainActivity_loadModel(JNIEnv *env, jobject thiz, jst
     memcpy(g_llama_ctx, &model->ctx, sizeof(llama_context));
     env->ReleaseStringUTFChars(modelPath, path);
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_example_llmclient_MainActivity_infer(JNIEnv *env, jobject thiz, jstring prompt) {
+    const char *promptStr = env->GetStringUTFChars(prompt, nullptr);
+    llama_context *ctx = g_llama_ctx;
+    if (ctx == nullptr) {
+        env->ReleaseStringUTFChars(prompt, promptStr);
+        return;
+    }
+
+    // Perform inference
+    std::vector<llama_token> tokens = llama_tokenize(ctx, promptStr);
+    std::string response = llama_generate_text(ctx, tokens.data(), tokens.size());
+
+    // Send the response back to Flutter
+    jclass channelClass = env->FindClass("com/example/llmclient/MainActivity");
+    jmethodID sendResponseMethod = env->GetStaticMethodID(channelClass, "sendResponse", "(Ljava/lang/String;)V");
+    env->CallStaticVoidMethod(channelClass, sendResponseMethod, env->NewStringUTF(response.c_str()));
+
+    env->ReleaseStringUTFChars(prompt, promptStr);
+}
