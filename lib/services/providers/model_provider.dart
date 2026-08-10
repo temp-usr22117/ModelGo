@@ -12,8 +12,7 @@ class ModelProvider with ChangeNotifier {
   List<Model> get filteredModels => _filteredModels;
 
   void loadModels() {
-    // Load the list of models from a static JSON file or remote manifest
-    // For simplicity, let's assume it's hardcoded for now
+    // Simulate loading the list of models
     _models = [
       Model(
         name: 'TinyLlama-1.1B-Chat',
@@ -34,6 +33,12 @@ class ModelProvider with ChangeNotifier {
 
   void filterModels(String query) {
     _filteredModels = _models.where((model) => model.name.toLowerCase().contains(query.toLowerCase())).toList();
+    notifyListeners();
+  }
+
+  void downloadComplete(String modelId) {  // Added this method
+    // Handle the notification that a download is complete
+    print('Download complete for $modelId');
     notifyListeners();
   }
 }

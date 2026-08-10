@@ -7,18 +7,20 @@ class DownloadService with ChangeNotifier {
   DownloadService(this._modelProvider) {}
 
   Future<void> startDownload(String url, String modelId) async {
-    // Simulate downloading a file
-    // In real life, you would use WorkManager on Android and URLSessionDownloadTask on iOS
-    // For now, we'll just print the download details
     print('Starting download of $modelId from $url');
-    await Future.delayed(Duration(seconds: 5));
+    await _simulateDownload(url);
     print('Download complete for $modelId');
 
-    _modelProvider.downloadComplete(modelId);
+    // Notify listeners that the download is complete
+    _downloadComplete(modelId);
   }
 
-  void downloadComplete(String modelId) {
-    // Notify listeners that the download is complete
+  void _downloadComplete(String modelId) {
+    _modelProvider.downloadComplete(modelId);  // Ensure this function exists in ModelProvider
     notifyListeners();
+  }
+
+  Future<void> _simulateDownload(String url) async {
+    await Future.delayed(Duration(seconds: 5));
   }
 }

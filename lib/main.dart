@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/model_provider.dart';
+import 'services/providers/model_provider.dart'; 
 import 'services/download_service.dart';  // Add this line
 import 'package:flutter/services.dart';  // Add this line
 
@@ -11,7 +11,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    return ChangeNotifierProvider<ModelProvider>(  // Explicitly specifying the type
       create: (context) => ModelProvider(),
       child: MaterialApp(
         title: 'Chat App',
