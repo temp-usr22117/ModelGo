@@ -5,12 +5,17 @@ import 'package:provider/provider.dart';
 import 'services/providers/model_provider.dart';
 import 'screens/dashboard.dart';
 
+import 'services/download_service.dart';
+
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await FlutterDownloader.initialize(
     debug: true,
   );
+
+  FlutterDownloader.registerCallback(downloadCallback);
 
   runApp(const MyApp());
 }

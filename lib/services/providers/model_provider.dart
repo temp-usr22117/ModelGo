@@ -15,9 +15,9 @@ class ModelProvider with ChangeNotifier {
     // Simulate loading the list of models
     _models = [
       Model(
-        name: 'TinyLlama-1.1B-Chat',
-        size: 500,
-        url: 'https://example.com/models/TinyLlama-1.1B-Chat-v0.3-GGUF.gguf',
+        name: 'TinyLlama 1.1B Chat v1.0 Q4_K_M',
+        size: 669,
+        url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf',
         isMobileOptimized: true,
       ),
       Model(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/providers/model_provider.dart';
+import '../services/download_service.dart';
 
 class ModelBrowserScreen extends StatelessWidget {
   const ModelBrowserScreen({super.key});
@@ -32,6 +33,7 @@ class ModelBrowserScreen extends StatelessWidget {
 
                 return _ModelCard(
                   model: model,
+                  modelProvider: modelProvider,
                 );
               },
             ),
@@ -41,9 +43,11 @@ class ModelBrowserScreen extends StatelessWidget {
 
 class _ModelCard extends StatelessWidget {
   final Model model;
+  final ModelProvider modelProvider;
 
   const _ModelCard({
     required this.model,
+    required this.modelProvider,
   });
 
   @override
@@ -131,10 +135,15 @@ class _ModelCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Real GGUF downloading will be implemented later.
-                },
-                icon: const Icon(Icons.download_rounded),
+                onPressed: () async {
+                  final downloadService = DownloadService(modelProvider);
+
+                  await downloadService.startDownload(
+                    model.url,
+                    model.name,
+          );
+        },
+                  icon: const Icon(Icons.download_rounded),
                 label: const Text('Download'),
               ),
             ),
