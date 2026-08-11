@@ -1,66 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/model_provider.dart';
-import 'services/download_service.dart';  // Add this line
-import 'package:flutter/services.dart';  // Add this line
-
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ModelProvider(),
-      child: MaterialApp(
-        title: 'Chat App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: ChatScreen(),
-      ),
-    );
-  }
-}
+import 'package:flutter/services.dart';
 
 class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
+
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
 
-  void _sendPrompt(BuildContext context) async {
-    final modelProvider = Provider.of<ModelProvider>(context, listen: false);
-    String prompt = _textController.text;
+  Future<void> _sendPrompt() async {
+    final prompt = _textController.text.trim();
+
+    if (prompt.isEmpty) {
+      return;
+    }
+
     _textController.clear();
 
-    // Call native bridge to send the prompt and handle response
-    final channel = MethodChannel('com.example.llmclient/native');
+    const channel = MethodChannel('com.example.llmclient/native');
+
     try {
-      String response = await channel.invokeMethod('infer', {'prompt': prompt});
+      final response = await channel.invokeMethod<String>(
+        'infer',
+        {'prompt': prompt},
+      );
+
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
-        // Add the response to chat history
-        _addMessage(context, 'User: $prompt\nAssistant: $response');
+        // Chat history will be implemented later.
+        debugPrint('User: $prompt');
+        debugPrint('Assistant: ${response ?? ''}');
       });
+    } on PlatformException catch (e) {
+      debugPrint('Error during inference: ${e.message}');
     } catch (e) {
-      print('Error during inference: $e');
+      debugPrint('Error during inference: $e');
     }
   }
 
-  void _addMessage(BuildContext context, String message) {
-    // Add the message to chat history
-    // For now, we'll just print it
-    print(message);
+  @override
+  void dispose() {
+    _textController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Chat')),
+      appBar: AppBar(
+        title: const Text('Chat'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -68,7 +65,7 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                itemCount: 5, // Dummy data
+                itemCount: 5,
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text('Message $index'),
@@ -78,10 +75,10 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             TextField(
               controller: _textController,
-              decoration: InputDecoration(hintText: 'Type a message...'),
-              onSubmitted: (value) {
-                _sendPrompt(context);
-              },
+              decoration: const InputDecoration(
+                hintText: 'Type a message...',
+              ),
+              onSubmitted: (_) => _sendPrompt(),
             ),
           ],
         ),
