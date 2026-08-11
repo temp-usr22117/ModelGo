@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/providers/model_provider.dart'; 
-import 'services/download_service.dart';  // Add this line
-import 'package:flutter/services.dart';  // Add this line
+import 'services/download_service.dart';  
+import 'package:flutter/services.dart';  
+import 'screens/home.dart';
 
 void main() {
   runApp(MyApp());
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: ChatScreen(),
+        home: HomeScreen(),
       ),
     );
   }

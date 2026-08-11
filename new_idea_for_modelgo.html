@@ -1,0 +1,204 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome file</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><p><strong>Android Local LLM App – System Architecture</strong><br>
+<strong>Goal</strong>: Native Android app (minSdk 29 / Android 10+) that runs GGUF models fully on-device using llama.cpp.<br>
+<strong>Core Engine</strong>: llama.cpp (via NDK/JNI)<br>
+<strong>Primary Language</strong>: Kotlin + Jetpack Compose<br>
+<strong>Target Architecture</strong>: arm64-v8a</p>
+<hr>
+<h3 id="high-level-layers">1. High-Level Layers</h3>
+<ol>
+<li>Presentation Layer (UI)</li>
+<li>Domain Layer (Business Logic)</li>
+<li>Data Layer (Model Management &amp; Storage)</li>
+<li>Native Inference Layer (llama.cpp)</li>
+<li>Platform Layer (Android System Services)</li>
+</ol>
+<hr>
+<h3 id="module-structure-recommended-multi-module-project">2. Module Structure (Recommended Multi-Module Project)</h3>
+<pre><code>app/                          → Main application module (UI + navigation)
+core/
+  ├── domain/                 → Use cases, models, repository interfaces
+  ├── data/                   → Repository implementations, local storage
+  └── common/                 → Shared utilities, constants, result types
+inference/
+  ├── jni/                    → JNI bridge + CMakeLists
+  └── llama/                  → llama.cpp source or prebuilt .so files
+feature/
+  ├── chat/                   → Chat screen + ViewModel
+  ├── models/                 → Model browser / download / management
+  └── settings/               → App settings, parameters, themes
+</code></pre>
+<hr>
+<h3 id="component-responsibilities">3. Component Responsibilities</h3>
+<p><strong>3.1 Presentation Layer</strong></p>
+<ul>
+<li>ChatScreen (Compose)</li>
+<li>ModelListScreen</li>
+<li>SettingsScreen</li>
+<li>ModelDownloadProgress UI</li>
+<li>ViewModels (ChatViewModel, ModelViewModel, SettingsViewModel)</li>
+<li>Navigation (NavHost + sealed routes)</li>
+</ul>
+<p><strong>3.2 Domain Layer</strong></p>
+<ul>
+<li>Entities: ChatMessage, ModelInfo, InferenceConfig, GenerationResult</li>
+<li>Use Cases:
+<ul>
+<li>LoadModelUseCase</li>
+<li>UnloadModelUseCase</li>
+<li>GenerateResponseUseCase (streaming)</li>
+<li>ListLocalModelsUseCase</li>
+<li>DownloadModelUseCase</li>
+<li>DeleteModelUseCase</li>
+<li>UpdateInferenceParamsUseCase</li>
+</ul>
+</li>
+<li>Repository Interfaces:
+<ul>
+<li>ModelRepository</li>
+<li>ChatRepository</li>
+<li>SettingsRepository</li>
+</ul>
+</li>
+</ul>
+<p><strong>3.3 Data Layer</strong></p>
+<ul>
+<li>ModelRepositoryImpl (file system + Room/SharedPreferences)</li>
+<li>ChatRepositoryImpl (Room database for conversation history)</li>
+<li>SettingsRepositoryImpl (DataStore)</li>
+<li>File storage location: <code>context.filesDir/models/</code> (app-private)</li>
+<li>Model metadata: name, size, quantization, context length, path, last used</li>
+</ul>
+<p><strong>3.4 Native Inference Layer</strong></p>
+<ul>
+<li>LlamaEngine (Kotlin singleton / interface)
+<ul>
+<li>loadModel(path, config)</li>
+<li>unloadModel()</li>
+<li>generate(prompt, params) → Flow (token streaming)</li>
+<li>isLoaded(): Boolean</li>
+<li>getModelInfo()</li>
+</ul>
+</li>
+<li>JNI Bridge (C++):
+<ul>
+<li>Java_…_nativeLoadModel</li>
+<li>Java_…_nativeGenerate</li>
+<li>Java_…_nativeUnload</li>
+<li>Java_…_nativeIsLoaded</li>
+</ul>
+</li>
+<li>llama.cpp build configuration:
+<ul>
+<li>ANDROID_ABI = arm64-v8a</li>
+<li>ANDROID_PLATFORM = android-29</li>
+<li>GGML_OPENMP = OFF</li>
+<li>Optional: GGML_VULKAN = ON or GGML_OPENCL = ON</li>
+</ul>
+</li>
+</ul>
+<p><strong>3.5 Platform Layer</strong></p>
+<ul>
+<li>Storage Access Framework (for importing external GGUF files)</li>
+<li>WorkManager (optional background model downloads)</li>
+<li>Foreground Service (optional long-running generation)</li>
+<li>Notification for download progress</li>
+<li>WakeLock / thermal awareness (optional)</li>
+</ul>
+<hr>
+<h3 id="data-flow-happy-path">4. Data Flow (Happy Path)</h3>
+<ol>
+<li>User selects or imports a GGUF model → ModelRepository saves metadata + file.</li>
+<li>User opens Chat → ChatViewModel calls LoadModelUseCase.</li>
+<li>LoadModelUseCase → LlamaEngine.loadModel().</li>
+<li>User sends message → GenerateResponseUseCase → LlamaEngine.generate() returns Flow of tokens.</li>
+<li>Tokens are collected in ViewModel and emitted to UI (streaming).</li>
+<li>Final response is saved via ChatRepository.</li>
+<li>On app background or explicit unload → UnloadModelUseCase.</li>
+</ol>
+<hr>
+<h3 id="key-interfaces-clean-contracts">5. Key Interfaces (Clean Contracts)</h3>
+<pre class=" language-kotlin"><code class="prism  language-kotlin"><span class="token keyword">interface</span> LlamaEngine <span class="token punctuation">{</span>
+    suspend <span class="token keyword">fun</span> <span class="token function">loadModel</span><span class="token punctuation">(</span>path<span class="token operator">:</span> String<span class="token punctuation">,</span> config<span class="token operator">:</span> InferenceConfig<span class="token punctuation">)</span><span class="token operator">:</span> Result<span class="token operator">&lt;</span>Unit<span class="token operator">&gt;</span>
+    <span class="token keyword">fun</span> <span class="token function">unloadModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">fun</span> <span class="token function">generate</span><span class="token punctuation">(</span>prompt<span class="token operator">:</span> String<span class="token punctuation">,</span> params<span class="token operator">:</span> GenerationParams<span class="token punctuation">)</span><span class="token operator">:</span> Flow<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span>
+    <span class="token keyword">fun</span> <span class="token function">isModelLoaded</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> Boolean
+    <span class="token keyword">fun</span> <span class="token function">getLoadedModelInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> ModelInfo<span class="token operator">?</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">interface</span> ModelRepository <span class="token punctuation">{</span>
+    <span class="token keyword">fun</span> <span class="token function">getAllModels</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> Flow<span class="token operator">&lt;</span>List<span class="token operator">&lt;</span>ModelInfo<span class="token operator">&gt;</span><span class="token operator">&gt;</span>
+    suspend <span class="token keyword">fun</span> <span class="token function">addModel</span><span class="token punctuation">(</span>file<span class="token operator">:</span> File<span class="token punctuation">,</span> metadata<span class="token operator">:</span> ModelInfo<span class="token punctuation">)</span>
+    suspend <span class="token keyword">fun</span> <span class="token function">deleteModel</span><span class="token punctuation">(</span>id<span class="token operator">:</span> String<span class="token punctuation">)</span>
+    suspend <span class="token keyword">fun</span> <span class="token function">getModelPath</span><span class="token punctuation">(</span>id<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> String<span class="token operator">?</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">InferenceConfig</span><span class="token punctuation">(</span>
+    <span class="token keyword">val</span> contextSize<span class="token operator">:</span> Int <span class="token operator">=</span> <span class="token number">2048</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> threads<span class="token operator">:</span> Int <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> gpuLayers<span class="token operator">:</span> Int <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">data</span> <span class="token keyword">class</span> <span class="token function">GenerationParams</span><span class="token punctuation">(</span>
+    <span class="token keyword">val</span> temperature<span class="token operator">:</span> Float <span class="token operator">=</span> <span class="token number">0.7f</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> topP<span class="token operator">:</span> Float <span class="token operator">=</span> <span class="token number">0.9f</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> topK<span class="token operator">:</span> Int <span class="token operator">=</span> <span class="token number">40</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> maxTokens<span class="token operator">:</span> Int <span class="token operator">=</span> <span class="token number">512</span><span class="token punctuation">,</span>
+    <span class="token keyword">val</span> stopSequences<span class="token operator">:</span> List<span class="token operator">&lt;</span>String<span class="token operator">&gt;</span> <span class="token operator">=</span> <span class="token function">emptyList</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<hr>
+<h3 id="build--native-integration-steps">6. Build &amp; Native Integration Steps</h3>
+<ol>
+<li>Create Android project with Kotlin + Compose (minSdk 29, targetSdk 35+).</li>
+<li>Add NDK + CMake support.</li>
+<li>Add llama.cpp as git submodule under <code>inference/llama/</code>.</li>
+<li>Write CMakeLists.txt that builds llama.cpp + custom JNI shared library.</li>
+<li>Create JNI bridge (.cpp) that exposes the required native methods.</li>
+<li>Load the .so library in Kotlin (System.loadLibrary).</li>
+<li>Implement LlamaEngine using the JNI methods.</li>
+<li>Wire everything through Hilt / Koin (recommended for clean DI).</li>
+</ol>
+<hr>
+<h3 id="non-functional-requirements">7. Non-Functional Requirements</h3>
+<ul>
+<li>Fully offline after model download</li>
+<li>No INTERNET permission required at runtime (optional only for model download)</li>
+<li>Memory-safe: always unload model when not in use</li>
+<li>Streaming responses (token-by-token)</li>
+<li>Support importing any GGUF file</li>
+<li>Persist chat history locally</li>
+<li>Configurable generation parameters</li>
+<li>Graceful error handling (OOM, invalid model, etc.)</li>
+</ul>
+<hr>
+<h3 id="suggested-implementation-order-step-by-step-for-ai-assistance">8. Suggested Implementation Order (Step-by-Step for AI Assistance)</h3>
+<ol>
+<li>Project setup + multi-module structure + DI</li>
+<li>Domain models + repository interfaces + use cases</li>
+<li>Native layer: CMake + llama.cpp integration + basic JNI load/generate</li>
+<li>LlamaEngine Kotlin wrapper + unit tests</li>
+<li>ModelRepository + local file storage</li>
+<li>Model management UI (list / import / delete)</li>
+<li>ChatRepository + Room database</li>
+<li>Chat UI + streaming ViewModel</li>
+<li>Settings + inference parameter controls</li>
+<li>Polish: error handling, progress indicators, memory management, themes</li>
+</ol>
+<hr>
+<p>This architecture is modular, testable, and follows clean architecture principles.<br>
+Any AI (or developer) can pick any numbered section and implement it independently while keeping clear contracts between layers.</p>
+</div>
+</body>
+
+</html>

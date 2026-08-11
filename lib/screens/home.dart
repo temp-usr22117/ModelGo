@@ -1,7 +1,7 @@
 // lib/screens/home.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/model_provider.dart';
+import '../services/providers/model_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -30,8 +30,8 @@ class HomeScreen extends StatelessWidget {
                     title: Text(model.name),
                     subtitle: Text('${model.size} MB'),
                     leading: Icon(Icons.arrow_downward),
-                    onTap: () async {
-                      await modelProvider.downloadModel(model);
+                    onTap: () {
+  // Download functionality will be connected later.
                     },
                   );
                 },
