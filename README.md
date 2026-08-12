@@ -637,11 +637,9 @@ Because the application contains a native `llama.cpp` integration, the Android N
 ## Clone the project
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/temp-usr22117/ModelGo
 cd modelgo
 ```
-
-Replace `<repository-url>` with the repository's actual Git URL.
 
 ---
 
@@ -1106,9 +1104,27 @@ Avoid making unrelated changes to the vendored llama.cpp source when troubleshoo
 
 # License
 
-The ModelGo project's license should be added here once the repository has an explicit project license.
+MIT License
 
-The repository also contains the `llama.cpp` source tree. `llama.cpp` has its own licensing terms, which should be reviewed and preserved when distributing the application.
+Copyright (c) 2026 Reetik Rana
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ---
 
