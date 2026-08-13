@@ -1,0 +1,615 @@
+Initialized native services in: /home/babayaga/.gradle/native
+Initialized jansi services in: /home/babayaga/.gradle/native
+Found daemon DaemonInfo{pid=193647, address=[e3b2a1d0-9e3f-424b-a179-da9e9e0c3ceb port:35845, addresses:[/127.0.0.1]], state=Idle, lastBusy=1786610053361, context=DefaultDaemonContext[uid=9485a741-df6b-463b-818c-4bdfd8944758,javaHome=/home/babayaga/Downloads/android-studio-2025.1.1.13-linux/android-studio/jbr,javaVersion=21,javaVendor=JetBrains s.r.o.,daemonRegistryDir=/home/babayaga/.gradle/daemon,pid=193647,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+JVM is incompatible.
+Wanted: DaemonRequestContext{jvmCriteria=/usr/lib/jvm/java-17-openjdk-amd64 (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=4G, -XX:ReservedCodeCacheSize=512m, -XX:+HeapDumpOnOutOfMemoryError, -Xmx8G, -Dfile.encoding=UTF-8, -Duser.country=US, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=9485a741-df6b-463b-818c-4bdfd8944758,javaHome=/home/babayaga/Downloads/android-studio-2025.1.1.13-linux/android-studio/jbr,javaVersion=21,javaVendor=JetBrains s.r.o.,daemonRegistryDir=/home/babayaga/.gradle/daemon,pid=193647,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=4G,-XX:ReservedCodeCacheSize=512m,-XX:+HeapDumpOnOutOfMemoryError,-Xmx8G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+Removing 0 daemon stop events from registry
+Previous Daemon (14975) stopped at Thu Aug 13 13:52:20 IST 2026 after being idle for 5 minutes and not recently used and to reclaim system physical memory
+Starting a Gradle Daemon, 1 busy and 1 incompatible and 1 stopped Daemons could not be reused, use --status for details
+Starting process 'Gradle build daemon'. Working directory: /home/babayaga/.gradle/daemon/9.1.0 Command: /usr/lib/jvm/java-17-openjdk-amd64/bin/java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-opens=java.base/java.nio.charset=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.xml/javax.xml.namespace=ALL-UNNAMED --add-opens=java.base/java.time=ALL-UNNAMED -XX:MaxMetaspaceSize=4G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError -Xmx8G -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant -cp /home/babayaga/.gradle/wrapper/dists/gradle-9.1.0-all/7wzd0jkjit61aq2p43wpjgij9/gradle-9.1.0/lib/gradle-daemon-main-9.1.0.jar -javaagent:/home/babayaga/.gradle/wrapper/dists/gradle-9.1.0-all/7wzd0jkjit61aq2p43wpjgij9/gradle-9.1.0/lib/agents/gradle-instrumentation-agent-9.1.0.jar org.gradle.launcher.daemon.bootstrap.GradleDaemon 9.1.0
+Successfully started process 'Gradle build daemon'
+An attempt to start the daemon took 0.571 secs.
+The client will now receive all logging from the daemon (pid: 244275). The daemon log file: /home/babayaga/.gradle/daemon/9.1.0/daemon-244275.out.log
+Starting build in new daemon [memory: 8 GiB]
+Using 16 worker leases.
+Received JVM installation metadata from '/usr/lib/jvm/java-17-openjdk-amd64': {JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64, JAVA_VERSION=17.0.19, JAVA_VENDOR=Ubuntu, RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=17.0.19+10-1-24.04.2-Ubuntu, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=17.0.19+10-1-24.04.2-Ubuntu, VM_VENDOR=Ubuntu, OS_ARCH=amd64}
+Watching the file system is configured to be enabled if available
+Now considering [/home/babayaga/Documents/modelgo/android] as hierarchies to watch
+File system watching is active
+Starting Build
+Now considering [/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle, /home/babayaga/Documents/modelgo/android] as hierarchies to watch
+
+> Configure project :gradle
+Evaluating project ':gradle' using build file '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build.gradle.kts'.
+Resolved plugin [id: 'org.gradle.java-gradle-plugin']
+Resolved plugin [id: 'org.gradle.groovy']
+Resolved plugin [id: 'org.gradle.kotlin.kotlin-dsl', version: '6.2.0']
+Resolved plugin [id: 'org.jetbrains.kotlin.jvm', version: '2.2.20']
+Build d03d24fe-4b4c-477b-bb90-48bba8558fe6 is started
+Using Kotlin Gradle Plugin gradle813 variant
+kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+WARNING: Unsupported Kotlin plugin version.
+The `embedded-kotlin` and `kotlin-dsl` plugins rely on features of Kotlin `2.2.0` that might work differently than in the requested version `2.2.20`.
+file or directory '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/java', not found
+Resolved plugin [id: 'dev.flutter.flutter-plugin-loader', version: '1.0.0']
+Resolved plugin [id: 'com.android.application', version: '9.0.1', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.android', version: '2.3.20', apply: false]
+Resolve mutations for :gradle:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker,5,main]) started.
+:gradle:checkKotlinGradlePluginConfigurationErrors (Thread[Execution worker,5,main]) started.
+
+> Task :gradle:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':gradle:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :gradle:compileKotlin (Thread[Execution worker,5,main]) started.
+:gradle:compileKotlin (Thread[Execution worker,5,main]) started.
+Resolve mutations for :gradle:pluginDescriptors (Thread[Execution worker Thread 6,5,main]) started.
+:gradle:pluginDescriptors (Thread[Execution worker Thread 6,5,main]) started.
+
+> Task :gradle:pluginDescriptors UP-TO-DATE
+Caching disabled for task ':gradle:pluginDescriptors' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':gradle:pluginDescriptors' as it is up-to-date.
+Resolve mutations for :gradle:processResources (Thread[Execution worker Thread 6,5,main]) started.
+:gradle:processResources (Thread[Execution worker Thread 6,5,main]) started.
+
+> Task :gradle:processResources UP-TO-DATE
+Caching disabled for task ':gradle:processResources' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':gradle:processResources' as it is up-to-date.
+
+> Task :gradle:compileKotlin
+Caching disabled for task ':gradle:compileKotlin' because:
+  Build cache is disabled
+Task ':gradle:compileKotlin' is not up-to-date because:
+  Value of input property 'kotlinJavaToolchainProvider.javaVersion' has changed for task ':gradle:compileKotlin'
+The input changes require a full rebuild for incremental task ':gradle:compileKotlin'.
+file or directory '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/java', not found
+Overriding '-Xjvm-default=all' to stable compiler plugin argument '-jvm-default=no-compatibility' in the presence of 'kotlin-dsl' plugin.
+file or directory '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/java', not found
+file or directory '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/java', not found
+file or directory '/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/java', not found
+Kotlin source files: /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/IntentFilterCheck.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPluginConstants.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterAppPluginLoaderPlugin.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/AgpCommonExtensionWrapper.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/Deeplink.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/plugins/PluginHandler.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/DeepLinkJsonFromManifestTaskHelper.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/DeepLinkJsonFromManifestTask.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/BaseFlutterTaskHelper.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/CopyFlutterJniLibsTask.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/BaseFlutterTask.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/FlutterTaskHelper.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/tasks/FlutterTask.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/BaseApplicationNameHandler.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/NativePluginLoaderReflectionBridge.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/DependencyVersionChecker.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/VersionUtils.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/AppLinkSettings.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/VersionFetcher.kt, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPluginUtils.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: /usr/lib/jvm/java-17-openjdk-amd64
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@67768cd0, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build/kotlin/compileKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build/kotlin/compileKotlin/local-state/build-history.bin, useModuleDetection=false), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[/home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build/classes/kotlin/main, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build/kotlin/compileKotlin/cacheable, /home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/build/kotlin/compileKotlin/local-state])
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/Deeplink.kt:13:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/Deeplink.kt:15:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/Deeplink.kt:17:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/Deeplink.kt:19:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:13:8 'interface ApkVariant : Any, BaseVariant, InstallableVariant, AndroidArtifactVariant, InternalBaseVariant' is deprecated. Deprecated in Java.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPlugin.kt:662:69 'interface ApkVariant : Any, BaseVariant, InstallableVariant, AndroidArtifactVariant, InternalBaseVariant' is deprecated. Deprecated in Java.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/FlutterPluginUtils.kt:12:8 'interface BaseVariantOutput : Any, OutputFile' is deprecated. Deprecated in Java.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/plugins/PluginHandler.kt:168:70 Unchecked cast of 'NamedDomainObjectContainer<out BuildType>' to 'NamedDomainObjectContainer<BuildType>'.
+w: file:///home/babayaga/snap/flutter/common/flutter/packages/flutter_tools/gradle/src/main/kotlin/plugins/PluginHandler.kt:169:75 Unchecked cast of 'NamedDomainObjectContainer<out BuildType>' to 'NamedDomainObjectContainer<BuildType>'.
+Finished executing kotlin compiler using DAEMON strategy
+Resolve mutations for :gradle:compileJava (Thread[Execution worker,5,main]) started.
+:gradle:compileJava (Thread[Execution worker,5,main]) started.
+
+> Task :gradle:compileJava NO-SOURCE
+Skipping task ':gradle:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gradle:compileGroovy (Thread[Execution worker,5,main]) started.
+:gradle:compileGroovy (Thread[Execution worker,5,main]) started.
+
+> Task :gradle:compileGroovy NO-SOURCE
+Skipping task ':gradle:compileGroovy' as it has no source files and no previous output files.
+Resolve mutations for :gradle:classes (Thread[Execution worker,5,main]) started.
+:gradle:classes (Thread[Execution worker,5,main]) started.
+
+> Task :gradle:classes UP-TO-DATE
+Skipping task ':gradle:classes' as it has no actions.
+Resolve mutations for :gradle:jar (Thread[Execution worker,5,main]) started.
+:gradle:jar (Thread[Execution worker,5,main]) started.
+
+> Task :gradle:jar UP-TO-DATE
+Caching disabled for task ':gradle:jar' because:
+  Build cache is disabled
+  Not worth caching
+Skipping task ':gradle:jar' as it is up-to-date.
+Settings evaluated using settings file '/home/babayaga/Documents/modelgo/android/settings.gradle.kts'.
+Projects loaded. Root project using build file '/home/babayaga/Documents/modelgo/android/build.gradle.kts'.
+Included projects: [root project 'android', project ':app', project ':flutter_downloader', project ':jni', project ':jni_flutter', project ':shared_preferences_android']
+
+> Configure project :
+Evaluating root project 'android' using build file '/home/babayaga/Documents/modelgo/android/build.gradle.kts'.
+
+> Configure project :app
+Evaluating project ':app' using build file '/home/babayaga/Documents/modelgo/android/app/build.gradle.kts'.
+Resolved plugin [id: 'com.android.application']
+Resolved plugin [id: 'dev.flutter.flutter-gradle-plugin']
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+Using default execution profile
+Build 1270b71c-e906-4922-8ee4-35fcdac3cb46 is started
+Using Kotlin Gradle Plugin gradle813 variant
+Using Kotlin Gradle Plugin gradle813 variant
+Using Kotlin Gradle Plugin gradle813 variant
+Using Kotlin Gradle Plugin gradle813 variant
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':app' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Configure project :flutter_downloader
+Evaluating project ':flutter_downloader' using build file '/home/babayaga/.pub-cache/hosted/pub.dev/flutter_downloader-1.12.0/android/build.gradle'.
+Using default execution profile
+Using Kotlin Gradle Plugin gradle813 variant
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':flutter_downloader' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Configure project :jni
+Evaluating project ':jni' using build file '/home/babayaga/.pub-cache/hosted/pub.dev/jni-1.0.3/android/build.gradle'.
+Using default execution profile
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+C/C++: android.ndkVersion from module build.gradle is [28.2.13676358]
+C/C++: android.ndkPath from module build.gradle is not set
+C/C++: ndk.dir in local.properties is not set
+C/C++: Not considering ANDROID_NDK_HOME because support was removed after deprecation period.
+C/C++: sdkFolder is /home/babayaga/Android/Sdk
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':jni' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Configure project :jni_flutter
+Evaluating project ':jni_flutter' using build file '/home/babayaga/.pub-cache/hosted/pub.dev/jni_flutter-1.0.2/android/build.gradle'.
+Using default execution profile
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':jni_flutter' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+
+> Configure project :shared_preferences_android
+Evaluating project ':shared_preferences_android' using build file '/home/babayaga/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.27/android/build.gradle.kts'.
+Resolved plugin [id: 'com.android.library']
+Using default execution profile
+w: [33m[1m⚠️ Deprecated 'org.jetbrains.kotlin.android' plugin usage[0m[0m
+The 'org.jetbrains.kotlin.android' plugin in project ':shared_preferences_android' is no longer required for Kotlin support since AGP 9.0.
+[32m[1mSolution:[0m[0m
+[32m[3mRemove both `android.builtInKotlin=true` and `android.newDsl=false` from `gradle.properties`, then migrate to built-in Kotlin.[0m[0m
+[36mSee [0m[34mhttps://kotl.in/gradle/agp-built-in-kotlin[0m[36m for more details.[0m
+
+All projects evaluated.
+WARNING: Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): flutter_downloader
+Future versions of Flutter will fail to build if your app uses plugins that apply KGP.
+
+Please check the changelogs of these plugins and upgrade to a version that supports Built-in Kotlin.
+If no such version exists, report the issue to the plugin. If necessary, here is a guide on filing 
+an issue against a plugin: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers#report-incompatible-kotlin-gradle-plugin-usage-to-plugin-authors
+
+If you are a plugin author, please migrate your plugin to Built-in Kotlin using this guide: https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
+Task name matched 'assembleRelease'
+Selected primary task 'assembleRelease' from project :
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:compileDebugAndroidTestKotlin
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:compileDebugKotlin
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:compileProfileKotlin
+Tasks to be executed: [task ':app:ReleaseMinSdkCheck', task ':app:preBuild', task ':app:preReleaseBuild', task ':app:configureCMakeRelease[arm64-v8a]', task ':app:buildCMakeRelease[arm64-v8a]', task ':app:configureCMakeRelease[armeabi-v7a]', task ':app:buildCMakeRelease[armeabi-v7a]', task ':app:configureCMakeRelease[x86_64]', task ':app:buildCMakeRelease[x86_64]', task ':app:compileFlutterBuildRelease', task ':app:copyJniLibsflutterBuildRelease', task ':app:mergeReleaseJniLibFolders', task ':flutter_downloader:preBuild', task ':flutter_downloader:preReleaseBuild', task ':flutter_downloader:mergeReleaseJniLibFolders', task ':flutter_downloader:mergeReleaseNativeLibs', task ':flutter_downloader:copyReleaseJniLibsProjectOnly', task ':jni:preBuild', task ':jni:preReleaseBuild', task ':jni:configureCMakeRelWithDebInfo[arm64-v8a]', task ':jni:buildCMakeRelWithDebInfo[arm64-v8a]', task ':jni:configureCMakeRelWithDebInfo[x86_64]', task ':jni:buildCMakeRelWithDebInfo[x86_64]', task ':jni:mergeReleaseJniLibFolders', task ':jni:mergeReleaseNativeLibs', task ':jni:copyReleaseJniLibsProjectOnly', task ':jni_flutter:preBuild', task ':jni_flutter:preReleaseBuild', task ':jni_flutter:mergeReleaseJniLibFolders', task ':jni_flutter:mergeReleaseNativeLibs', task ':jni_flutter:copyReleaseJniLibsProjectOnly', task ':shared_preferences_android:preBuild', task ':shared_preferences_android:preReleaseBuild', task ':shared_preferences_android:mergeReleaseJniLibFolders', task ':shared_preferences_android:mergeReleaseNativeLibs', task ':shared_preferences_android:copyReleaseJniLibsProjectOnly', task ':app:mergeReleaseNativeLibs', task ':app:stripReleaseDebugSymbols', task ':app:extractReleaseNativeSymbolTables', task ':app:mergeReleaseNativeDebugMetadata', task ':flutter_downloader:checkKotlinGradlePluginConfigurationErrors', task ':flutter_downloader:generateReleaseResources', task ':flutter_downloader:packageReleaseResources', task ':flutter_downloader:processReleaseNavigationResources', task ':flutter_downloader:parseReleaseLocalResources', task ':flutter_downloader:generateReleaseRFile', task ':flutter_downloader:compileReleaseKotlin', task ':flutter_downloader:javaPreCompileRelease', task ':flutter_downloader:compileReleaseJavaWithJavac', task ':flutter_downloader:mergeReleaseGeneratedProguardFiles', task ':flutter_downloader:exportReleaseConsumerProguardFiles', task ':jni:checkKotlinGradlePluginConfigurationErrors', task ':jni:generateReleaseResources', task ':jni:packageReleaseResources', task ':jni:processReleaseNavigationResources', task ':jni:parseReleaseLocalResources', task ':jni:generateReleaseRFile', task ':jni:compileReleaseKotlin', task ':jni:javaPreCompileRelease', task ':jni:compileReleaseJavaWithJavac', task ':jni:bundleLibCompileToJarRelease', task ':jni_flutter:checkKotlinGradlePluginConfigurationErrors', task ':jni_flutter:generateReleaseResources', task ':jni_flutter:packageReleaseResources', task ':jni_flutter:processReleaseNavigationResources', task ':jni_flutter:parseReleaseLocalResources', task ':jni_flutter:generateReleaseRFile', task ':jni_flutter:compileReleaseKotlin', task ':jni_flutter:javaPreCompileRelease', task ':jni_flutter:compileReleaseJavaWithJavac', task ':jni_flutter:mergeReleaseGeneratedProguardFiles', task ':jni_flutter:exportReleaseConsumerProguardFiles', task ':jni:mergeReleaseGeneratedProguardFiles', task ':jni:exportReleaseConsumerProguardFiles', task ':shared_preferences_android:checkKotlinGradlePluginConfigurationErrors', task ':shared_preferences_android:generateReleaseResources', task ':shared_preferences_android:packageReleaseResources', task ':shared_preferences_android:processReleaseNavigationResources', task ':shared_preferences_android:parseReleaseLocalResources', task ':shared_preferences_android:generateReleaseRFile', task ':shared_preferences_android:compileReleaseKotlin', task ':shared_preferences_android:javaPreCompileRelease', task ':shared_preferences_android:compileReleaseJavaWithJavac', task ':shared_preferences_android:mergeReleaseGeneratedProguardFiles', task ':shared_preferences_android:exportReleaseConsumerProguardFiles', task ':app:buildKotlinToolingMetadata', task ':app:checkReleaseDuplicateClasses', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:cleanMergeReleaseAssets', task ':app:generateReleaseAssets', task ':flutter_downloader:generateReleaseAssets', task ':flutter_downloader:mergeReleaseAssets', task ':jni:generateReleaseAssets', task ':jni:mergeReleaseAssets', task ':jni_flutter:generateReleaseAssets', task ':jni_flutter:mergeReleaseAssets', task ':shared_preferences_android:generateReleaseAssets', task ':shared_preferences_android:mergeReleaseAssets', task ':app:mergeReleaseAssets', task ':app:copyFlutterAssetsRelease', task ':app:generateReleaseResources', task ':app:packageReleaseResources', task ':app:processReleaseNavigationResources', task ':app:parseReleaseLocalResources', task ':app:generateReleaseRFile', task ':flutter_downloader:bundleLibCompileToJarRelease', task ':jni_flutter:bundleLibCompileToJarRelease', task ':shared_preferences_android:bundleLibCompileToJarRelease', task ':app:compileReleaseKotlin', task ':app:javaPreCompileRelease', task ':app:compileReleaseJavaWithJavac', task ':flutter_downloader:prepareReleaseArtProfile', task ':jni:prepareReleaseArtProfile', task ':jni_flutter:prepareReleaseArtProfile', task ':shared_preferences_android:prepareReleaseArtProfile', task ':app:mergeReleaseArtProfile', task ':flutter_downloader:writeReleaseAarMetadata', task ':jni:writeReleaseAarMetadata', task ':jni_flutter:writeReleaseAarMetadata', task ':shared_preferences_android:writeReleaseAarMetadata', task ':app:checkReleaseAarMetadata', task ':app:compileReleaseNavigationResources', task ':app:mapReleaseSourceSetPaths', task ':app:mergeReleaseResources', task ':app:createReleaseCompatibleScreenManifests', task ':app:extractDeepLinksRelease', task ':flutter_downloader:extractDeepLinksRelease', task ':flutter_downloader:processReleaseManifest', task ':jni:extractDeepLinksRelease', task ':jni:processReleaseManifest', task ':jni_flutter:extractDeepLinksRelease', task ':jni_flutter:processReleaseManifest', task ':shared_preferences_android:extractDeepLinksRelease', task ':shared_preferences_android:processReleaseManifest', task ':app:processReleaseMainManifest', task ':app:outputReleaseAppLinkSettings', task ':app:processReleaseManifest', task ':app:processReleaseManifestForPackage', task ':app:processReleaseResources', task ':flutter_downloader:bundleLibRuntimeToJarRelease', task ':jni:bundleLibRuntimeToJarRelease', task ':jni_flutter:bundleLibRuntimeToJarRelease', task ':shared_preferences_android:bundleLibRuntimeToJarRelease', task ':app:expandReleaseArtProfileWildcards', task ':app:extractProguardFiles', task ':app:mergeReleaseGeneratedProguardFiles', task ':app:processReleaseJavaRes', task ':flutter_downloader:processReleaseJavaRes', task ':jni:processReleaseJavaRes', task ':jni_flutter:processReleaseJavaRes', task ':shared_preferences_android:processReleaseJavaRes', task ':app:mergeReleaseJavaResource', task ':app:mergeReleaseStartupProfile', task ':app:minifyReleaseWithR8', task ':app:compileReleaseArtProfile', task ':app:compressReleaseAssets', task ':app:extractReleaseVersionControlInfo', task ':flutter_downloader:createFullJarRelease', task ':flutter_downloader:extractProguardFiles', task ':flutter_downloader:generateReleaseLintModel', task ':flutter_downloader:prepareLintJarForPublish', task ':jni:createFullJarRelease', task ':jni:extractProguardFiles', task ':jni:generateReleaseLintModel', task ':jni:prepareLintJarForPublish', task ':jni_flutter:createFullJarRelease', task ':jni_flutter:extractProguardFiles', task ':jni_flutter:generateReleaseLintModel', task ':jni_flutter:prepareLintJarForPublish', task ':shared_preferences_android:createFullJarRelease', task ':shared_preferences_android:extractProguardFiles', task ':shared_preferences_android:generateReleaseLintModel', task ':shared_preferences_android:prepareLintJarForPublish', task ':app:generateReleaseLintVitalReportModel', task ':flutter_downloader:checkReleaseAarMetadata', task ':flutter_downloader:stripReleaseDebugSymbols', task ':flutter_downloader:copyReleaseJniLibsProjectAndLocalJars', task ':flutter_downloader:extractDeepLinksForAarRelease', task ':flutter_downloader:extractReleaseAnnotations', task ':flutter_downloader:mergeReleaseConsumerProguardFiles', task ':flutter_downloader:mergeReleaseJavaResource', task ':flutter_downloader:syncReleaseLibJars', task ':flutter_downloader:bundleReleaseLocalLintAar', task ':jni_flutter:checkReleaseAarMetadata', task ':jni_flutter:stripReleaseDebugSymbols', task ':jni_flutter:copyReleaseJniLibsProjectAndLocalJars', task ':jni_flutter:extractDeepLinksForAarRelease', task ':jni_flutter:extractReleaseAnnotations', task ':jni_flutter:mergeReleaseConsumerProguardFiles', task ':jni_flutter:mergeReleaseJavaResource', task ':jni_flutter:syncReleaseLibJars', task ':jni_flutter:bundleReleaseLocalLintAar', task ':jni:checkReleaseAarMetadata', task ':jni:stripReleaseDebugSymbols', task ':jni:copyReleaseJniLibsProjectAndLocalJars', task ':jni:extractDeepLinksForAarRelease', task ':jni:extractReleaseAnnotations', task ':jni:mergeReleaseConsumerProguardFiles', task ':jni:mergeReleaseJavaResource', task ':jni:syncReleaseLibJars', task ':jni:bundleReleaseLocalLintAar', task ':shared_preferences_android:checkReleaseAarMetadata', task ':shared_preferences_android:stripReleaseDebugSymbols', task ':shared_preferences_android:copyReleaseJniLibsProjectAndLocalJars', task ':shared_preferences_android:extractDeepLinksForAarRelease', task ':shared_preferences_android:extractReleaseAnnotations', task ':shared_preferences_android:mergeReleaseConsumerProguardFiles', task ':shared_preferences_android:mergeReleaseJavaResource', task ':shared_preferences_android:syncReleaseLibJars', task ':shared_preferences_android:bundleReleaseLocalLintAar', task ':flutter_downloader:lintVitalAnalyzeRelease', task ':flutter_downloader:writeReleaseLintModelMetadata', task ':jni:lintVitalAnalyzeRelease', task ':jni:writeReleaseLintModelMetadata', task ':jni_flutter:lintVitalAnalyzeRelease', task ':jni_flutter:writeReleaseLintModelMetadata', task ':shared_preferences_android:lintVitalAnalyzeRelease', task ':shared_preferences_android:writeReleaseLintModelMetadata', task ':app:lintVitalAnalyzeRelease', task ':flutter_downloader:generateReleaseLintVitalModel', task ':jni:generateReleaseLintVitalModel', task ':jni_flutter:generateReleaseLintVitalModel', task ':shared_preferences_android:generateReleaseLintVitalModel', task ':app:lintVitalReportRelease', task ':app:lintVitalRelease', task ':app:convertShrunkResourcesToBinaryRelease', task ':app:optimizeReleaseResources', task ':app:collectReleaseDependencies', task ':app:sdkReleaseDependencyData', task ':app:validateSigningRelease', task ':app:writeReleaseAppMetadata', task ':app:writeReleaseSigningConfigVersions', task ':app:packageRelease', task ':app:createReleaseApkListingFileRedirect', task ':app:assembleRelease', task ':flutter_downloader:bundleReleaseAar', task ':flutter_downloader:compileReleaseNavigationResources', task ':flutter_downloader:mapReleaseSourceSetPaths', task ':flutter_downloader:mergeReleaseResources', task ':flutter_downloader:verifyReleaseResources', task ':flutter_downloader:assembleRelease', task ':jni:bundleReleaseAar', task ':jni:compileReleaseNavigationResources', task ':jni:mapReleaseSourceSetPaths', task ':jni:mergeReleaseResources', task ':jni:verifyReleaseResources', task ':jni:assembleRelease', task ':jni_flutter:bundleReleaseAar', task ':jni:compileReleaseLibraryResources', task ':jni_flutter:compileReleaseNavigationResources', task ':jni_flutter:mapReleaseSourceSetPaths', task ':jni_flutter:mergeReleaseResources', task ':jni_flutter:verifyReleaseResources', task ':jni_flutter:assembleRelease', task ':shared_preferences_android:bundleReleaseAar', task ':shared_preferences_android:compileReleaseNavigationResources', task ':shared_preferences_android:mapReleaseSourceSetPaths', task ':shared_preferences_android:mergeReleaseResources', task ':shared_preferences_android:verifyReleaseResources', task ':shared_preferences_android:assembleRelease']
+Tasks that were excluded: []
+work action Parameters of FilterShrinkerRulesTransform (Thread[Execution worker Thread 15,5,main]) started.
+work action Parameters of ExtractAarTransform (Thread[Execution worker Thread 15,5,main]) started.
+work action Parameters of ExtractAarTransform (Thread[Execution worker Thread 15,5,main]) started.
+Resolve mutations for :app:ReleaseMinSdkCheck (Thread[Execution worker Thread 15,5,main]) started.
+:app:ReleaseMinSdkCheck (Thread[Execution worker Thread 15,5,main]) started.
+
+> Task :app:ReleaseMinSdkCheck
+Caching disabled for task ':app:ReleaseMinSdkCheck' because:
+  Build cache is disabled
+Task ':app:ReleaseMinSdkCheck' is not up-to-date because:
+  Task has not declared any outputs despite executing actions.
+Resolve mutations for :app:preBuild (Thread[Execution worker Thread 15,5,main]) started.
+:app:preBuild (Thread[Execution worker Thread 15,5,main]) started.
+
+> Task :app:preBuild UP-TO-DATE
+Skipping task ':app:preBuild' as it has no actions.
+Resolve mutations for :app:preReleaseBuild (Thread[Execution worker Thread 15,5,main]) started.
+:app:preReleaseBuild (Thread[Execution worker Thread 15,5,main]) started.
+
+> Task :app:preReleaseBuild UP-TO-DATE
+Skipping task ':app:preReleaseBuild' as it has no actions.
+Resolve mutations for :app:configureCMakeRelease[arm64-v8a] (Thread[Execution worker Thread 15,5,main]) started.
+:app:configureCMakeRelease[arm64-v8a] (Thread[Execution worker Thread 6,5,main]) started.
+
+> Task :app:configureCMakeRelease[arm64-v8a]
+Caching disabled for task ':app:configureCMakeRelease[arm64-v8a]' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Task ':app:configureCMakeRelease[arm64-v8a]' is not up-to-date because:
+  Task.upToDateWhen is false.
+C/C++: Parsing legacy package: /home/babayaga/Android/Sdk/cmdline-tools/latest
+C/C++: SDK Manager found the following installed packages: build-tools;33.0.1 build-tools;34.0.0 build-tools;35.0.0 build-tools;36.0.0 cmake;3.22.1 emulator ndk;25.1.8937393 ndk;26.1.10909125 ndk;27.0.12077973 ndk;27.1.12297006 ndk;28.2.13676358 ndk;29.0.13113456 platform-tools platforms;android-33 platforms;android-34 platforms;android-35 platforms;android-36 sources;android-36 system-images;android-34;google_apis;x86_64 system-images;android-36;google_apis;x86_64 system-images;android-36;google_apis_playstore;x86_64
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|arm64-v8a : Start JSON generation. Platform version: 24 min SDK version: arm64-v8a
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|arm64-v8a : JSON '/home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/arm64-v8a/android_gradle_build.json' was up-to-date
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|arm64-v8a : JSON generation completed without problems
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|arm64-v8a : Writing build model to /home/babayaga/Documents/modelgo/build/app/intermediates/cxx/release/1b4r2l4x/logs/arm64-v8a/build_model.json
+Resolve mutations for :app:buildCMakeRelease[arm64-v8a] (Thread[Execution worker Thread 6,5,main]) started.
+:app:buildCMakeRelease[arm64-v8a] (Thread[Execution worker Thread 6,5,main]) started.
+
+> Task :app:buildCMakeRelease[arm64-v8a]
+Caching disabled for task ':app:buildCMakeRelease[arm64-v8a]' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Task ':app:buildCMakeRelease[arm64-v8a]' is not up-to-date because:
+  Task.upToDateWhen is false.
+C/C++: starting build
+C/C++: reading expected JSONs
+C/C++: done reading expected JSONs
+C/C++: executing build commands for targets that produce .so files or executables
+C/C++: evaluate miniconfig
+C/C++: evaluate library ggml-base (arm64-v8a)
+C/C++: building target library ggml-base because no targets are specified.
+C/C++: evaluate library ggml (arm64-v8a)
+C/C++: building target library ggml because no targets are specified.
+C/C++: evaluate library native-lib (arm64-v8a)
+C/C++: building target library native-lib because no targets are specified.
+C/C++: evaluate library llama (arm64-v8a)
+C/C++: building target library llama because no targets are specified.
+C/C++: evaluate library ggml-cpu (arm64-v8a)
+C/C++: building target library ggml-cpu because no targets are specified.
+C/C++: about to build targets ggml, ggml-base, ggml-cpu, llama, native-lib
+C/C++: Build multiple targets ggml-base_arm64-v8a ggml_arm64-v8a native-lib_arm64-v8a llama_arm64-v8a ggml-cpu_arm64-v8a
+C/C++: /home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/arm64-v8a \
+  ggml \
+  ggml-base \
+  ggml-cpu \
+  llama \
+  native-lib
+
+Starting process 'command '/home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja''. Working directory: /home/babayaga/Documents/modelgo/android/app Command: /home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja -C /home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/arm64-v8a ggml ggml-base ggml-cpu llama native-lib
+Successfully started process 'command '/home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja''
+C/C++: Received process result: 0
+C/C++: check expected build outputs
+C/C++: build complete
+Resolve mutations for :app:configureCMakeRelease[armeabi-v7a] (Thread[Execution worker Thread 6,5,main]) started.
+:app:configureCMakeRelease[armeabi-v7a] (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :app:configureCMakeRelease[armeabi-v7a]
+Caching disabled for task ':app:configureCMakeRelease[armeabi-v7a]' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Task ':app:configureCMakeRelease[armeabi-v7a]' is not up-to-date because:
+  Task.upToDateWhen is false.
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|armeabi-v7a : Start JSON generation. Platform version: 24 min SDK version: armeabi-v7a
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|armeabi-v7a : JSON '/home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a/android_gradle_build.json' was up-to-date
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|armeabi-v7a : JSON generation completed without problems
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/CMakeLists.txt release|armeabi-v7a : Writing build model to /home/babayaga/Documents/modelgo/build/app/intermediates/cxx/release/1b4r2l4x/logs/armeabi-v7a/build_model.json
+Resolve mutations for :app:buildCMakeRelease[armeabi-v7a] (Thread[Execution worker Thread 9,5,main]) started.
+:app:buildCMakeRelease[armeabi-v7a] (Thread[Execution worker Thread 9,5,main]) started.
+
+> Task :app:buildCMakeRelease[armeabi-v7a]
+Caching disabled for task ':app:buildCMakeRelease[armeabi-v7a]' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Task ':app:buildCMakeRelease[armeabi-v7a]' is not up-to-date because:
+  Task.upToDateWhen is false.
+C/C++: starting build
+C/C++: reading expected JSONs
+C/C++: done reading expected JSONs
+C/C++: executing build commands for targets that produce .so files or executables
+C/C++: evaluate miniconfig
+C/C++: evaluate library ggml-base (armeabi-v7a)
+C/C++: building target library ggml-base because no targets are specified.
+C/C++: evaluate library ggml (armeabi-v7a)
+C/C++: building target library ggml because no targets are specified.
+C/C++: evaluate library native-lib (armeabi-v7a)
+C/C++: building target library native-lib because no targets are specified.
+C/C++: evaluate library llama (armeabi-v7a)
+C/C++: building target library llama because no targets are specified.
+C/C++: evaluate library ggml-cpu (armeabi-v7a)
+C/C++: building target library ggml-cpu because no targets are specified.
+C/C++: about to build targets ggml, ggml-base, ggml-cpu, llama, native-lib
+C/C++: Build multiple targets ggml-base_armeabi-v7a ggml_armeabi-v7a native-lib_armeabi-v7a llama_armeabi-v7a ggml-cpu_armeabi-v7a
+C/C++: /home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a \
+  ggml \
+  ggml-base \
+  ggml-cpu \
+  llama \
+  native-lib
+
+Starting process 'command '/home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja''. Working directory: /home/babayaga/Documents/modelgo/android/app Command: /home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja -C /home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a ggml ggml-base ggml-cpu llama native-lib
+Successfully started process 'command '/home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja''
+C/C++: ninja: Entering directory `/home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a'
+C/C++: /home/babayaga/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi24 --sysroot=/home/babayaga/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_LLAMAFILE -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/.. -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/. -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/../include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -O3 -DNDEBUG  -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -std=gnu++17 -MD -MT llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -MF llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o.d -o llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -c /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:311:12: error: use of undeclared identifier 'vld1q_f16'
+C/C++:   311 |     return vld1q_f16((const float16_t *)p);
+C/C++:       |            ^
+C/C++: /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:314:25: error: use of undeclared identifier 'vld1_f16'
+C/C++:   314 |     return vcvt_f32_f16(vld1_f16((const float16_t *)p));
+C/C++:       |                         ^
+C/C++: 2 errors generated.
+C/C++: Received process result: 1
+
+> Task :app:buildCMakeRelease[armeabi-v7a] FAILED
+Build d03d24fe-4b4c-477b-bb90-48bba8558fe6 is closed
+Build 1270b71c-e906-4922-8ee4-35fcdac3cb46 is closed
+
+[Incubating] Problems report is available at: file:///home/babayaga/Documents/modelgo/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:buildCMakeRelease[armeabi-v7a]'.
+> com.android.ide.common.process.ProcessException: ninja: Entering directory `/home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a'
+  [1/175] Linking CXX shared library bin/libggml-base.so
+  [2/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-hparams.cpp.o
+  [3/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-io.cpp.o
+  [4/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-cparams.cpp.o
+  [5/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-impl.cpp.o
+  [6/175] Building CXX object llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o
+  FAILED: llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o 
+  /home/babayaga/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++ --target=armv7-none-linux-androideabi24 --sysroot=/home/babayaga/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/sysroot -DGGML_BACKEND_BUILD -DGGML_BACKEND_SHARED -DGGML_SCHED_MAX_COPIES=4 -DGGML_SHARED -DGGML_USE_CPU_REPACK -DGGML_USE_LLAMAFILE -D_GNU_SOURCE -D_XOPEN_SOURCE=600 -Dggml_cpu_EXPORTS -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/.. -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/. -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu -I/home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/../include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -march=armv7-a -mthumb -Wformat -Werror=format-security   -O3 -DNDEBUG  -fPIC -Wmissing-declarations -Wmissing-noreturn -Wall -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wunreachable-code-break -Wunreachable-code-return -Wmissing-prototypes -Wextra-semi -std=gnu++17 -MD -MT llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -MF llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o.d -o llama.cpp/ggml/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/llamafile/sgemm.cpp.o -c /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp
+  /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:311:12: error: use of undeclared identifier 'vld1q_f16'
+    311 |     return vld1q_f16((const float16_t *)p);
+        |            ^
+  /home/babayaga/Documents/modelgo/android/app/src/main/cpp/llama.cpp/ggml/src/ggml-cpu/llamafile/sgemm.cpp:314:25: error: use of undeclared identifier 'vld1_f16'
+    314 |     return vcvt_f32_f16(vld1_f16((const float16_t *)p));
+        |                         ^
+  2 errors generated.
+  [7/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-memory.cpp.o
+  [8/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-mmap.cpp.o
+  [9/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-kv-cache-dsa.cpp.o
+  [10/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-kv-cache-msa.cpp.o
+  [11/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-model-saver.cpp.o
+  [12/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-memory-hybrid.cpp.o
+  [13/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-memory-hybrid-iswa.cpp.o
+  [14/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-memory-recurrent.cpp.o
+  [15/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-kv-cache-iswa.cpp.o
+  [16/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-context.cpp.o
+  [17/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-graph.cpp.o
+  [18/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-grammar.cpp.o
+  [19/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-model-loader.cpp.o
+  [20/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-kv-cache-dsv4.cpp.o
+  [21/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-quant.cpp.o
+  [22/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-kv-cache.cpp.o
+  [23/175] Building CXX object llama.cpp/src/CMakeFiles/llama.dir/llama-model.cpp.o
+  ninja: build stopped: subcommand failed.
+  
+  C++ build system [build] failed while executing:
+      /home/babayaga/Android/Sdk/cmake/3.22.1/bin/ninja \
+        -C \
+        /home/babayaga/Documents/modelgo/build/.cxx/release/1b4r2l4x/armeabi-v7a \
+        ggml \
+        ggml-base \
+        ggml-cpu \
+        llama \
+        native-lib
+    from /home/babayaga/Documents/modelgo/android/app
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.1.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 19s
+9 actionable tasks: 6 executed, 3 up-to-date
