@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=ModelGo
+Comment=Download and run quantized AI models locally
+Exec=modelgo
+Icon=${SNAP}/meta/gui/modelgo.png
+Terminal=false
+Type=Application
+Categories=Entertainment;

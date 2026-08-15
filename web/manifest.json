@@ -1,11 +1,11 @@
 {
-    "name": "modelgo",
-    "short_name": "modelgo",
+    "name": "ModelGo",
+    "short_name": "ModelGo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#02051E",
+    "theme_color": "#02051E",
+    "description": "Download and run quantized AI models locally.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

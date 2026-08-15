@@ -42,6 +42,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_native_splash: ^2.4.8
+  icons_launcher: ^3.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -60,6 +62,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/icon/modelgo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -91,3 +96,35 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+icons_launcher:
+  image_path: "assets/icon/modelgo.png"
+  platforms:
+    android:
+      enable: true
+      adaptive_background_color: "#02051E"
+      adaptive_foreground_image: "assets/icon/modelgo.png"
+    ios:
+      enable: true
+    web:
+      enable: true
+    macos:
+      enable: true
+    windows:
+      enable: true
+    linux:
+      enable: true
+
+flutter_native_splash:
+  color: "#02051E"
+  image: "assets/icon/modelgo.png"
+  android: true
+  ios: true
+  web: true
+  android_gravity: center
+  ios_content_mode: scaleAspectFit
+  web_image_mode: contain
+  android_12:
+    color: "#02051E"
+    image: "assets/icon/modelgo.png"
+    icon_background_color: "#02051E"

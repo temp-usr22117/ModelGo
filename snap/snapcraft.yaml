@@ -1,0 +1,28 @@
+name: modelgo
+version: 1.0.0
+summary: Run quantized AI models locally
+description: Download and run quantized AI language models directly on your device.
+
+confinement: strict
+base: core22
+grade: stable
+
+slots:
+  dbus-modelgo: # adjust accordingly to your app name
+    interface: dbus
+    bus: session
+    name: com.example.modelgo
+
+apps:
+  modelgo:
+    command: modelgo
+    extensions: [gnome] # gnome includes the libraries required by flutter
+    plugs:
+    - network
+    slots:
+      - dbus-modelgo
+parts:
+  modelgo:
+    source: .
+    plugin: flutter
+    flutter-target: lib/main.dart # The main entry-point file of the application

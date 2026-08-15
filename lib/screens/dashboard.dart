@@ -10,6 +10,16 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(9),
+            child: Image.asset(
+              'assets/icon/modelgo.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
         title: const Text('ModelGo'),
       ),
       body: SafeArea(
