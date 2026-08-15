@@ -11,20 +11,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:modelgo/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('shows the ModelGo dashboard', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('ModelGo'), findsOneWidget);
+    expect(find.text('Download Models'), findsOneWidget);
+    expect(find.text('My Models'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('Download Models'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Quantized Models'), findsOneWidget);
+    expect(find.text('Qwen 2.5 1.5B Instruct'), findsOneWidget);
+    expect(find.text('Qwen 2.5 3B Instruct'), findsOneWidget);
+    expect(find.text('4 GB+ RAM'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Qwen 2.5 7B Instruct'), findsOneWidget);
+    expect(find.text('12 GB+ RAM'), findsOneWidget);
   });
 }
