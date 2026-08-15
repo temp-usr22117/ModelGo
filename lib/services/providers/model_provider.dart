@@ -12,19 +12,39 @@ class ModelProvider with ChangeNotifier {
   List<Model> get filteredModels => _filteredModels;
 
   void loadModels() {
-    // Simulate loading the list of models
-    _models = [
+    _models = const [
       Model(
-        name: 'TinyLlama 1.1B Chat v1.0 Q4_K_M',
-        size: 669,
-        url: 'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf',
-        isMobileOptimized: true,
+        id: 'qwen2.5-1.5b-instruct-q4-k-m',
+        name: 'Qwen 2.5 1.5B Instruct',
+        parameters: '1.5B',
+        quantization: 'Q4_K_M',
+        sizeGb: 0.99,
+        minimumRamGb: 4,
+        fileName: 'Qwen2.5-1.5B-Instruct-Q4_K_M.gguf',
+        url:
+            'https://huggingface.co/bartowski/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf?download=true',
       ),
       Model(
-        name: 'Phi-1.5-mini',
-        size: 400,
-        url: 'https://example.com/models/Phi-1.5-mini-gguf.gguf',
-        isMobileOptimized: true,
+        id: 'qwen2.5-3b-instruct-q4-k-m',
+        name: 'Qwen 2.5 3B Instruct',
+        parameters: '3B',
+        quantization: 'Q4_K_M',
+        sizeGb: 1.93,
+        minimumRamGb: 6,
+        fileName: 'Qwen2.5-3B-Instruct-Q4_K_M.gguf',
+        url:
+            'https://huggingface.co/bartowski/Qwen2.5-3B-Instruct-GGUF/resolve/main/Qwen2.5-3B-Instruct-Q4_K_M.gguf?download=true',
+      ),
+      Model(
+        id: 'qwen2.5-7b-instruct-q4-k-m',
+        name: 'Qwen 2.5 7B Instruct',
+        parameters: '7B',
+        quantization: 'Q4_K_M',
+        sizeGb: 4.68,
+        minimumRamGb: 12,
+        fileName: 'Qwen2.5-7B-Instruct-Q4_K_M.gguf',
+        url:
+            'https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf?download=true',
       ),
     ];
     _filteredModels = _models;
@@ -32,39 +52,32 @@ class ModelProvider with ChangeNotifier {
   }
 
   void filterModels(String query) {
-    _filteredModels = _models.where((model) => model.name.toLowerCase().contains(query.toLowerCase())).toList();
-    notifyListeners();
-  }
-
-  void downloadComplete(String modelId) {  // Added this method
-    // Handle the notification that a download is complete
-    print('Download complete for $modelId');
+    final normalizedQuery = query.toLowerCase();
+    _filteredModels = _models
+        .where((model) => model.name.toLowerCase().contains(normalizedQuery))
+        .toList();
     notifyListeners();
   }
 }
 
 class Model {
-  final String name;
-  final double size;
-  final String url;
-  bool isMobileOptimized;
-
-  Model({
+  const Model({
+    required this.id,
     required this.name,
-    required this.size,
+    required this.parameters,
+    required this.quantization,
+    required this.sizeGb,
+    required this.minimumRamGb,
+    required this.fileName,
     required this.url,
-    required this.isMobileOptimized,
   });
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-          (other is Model &&
-              name == other.name &&
-              size == other.size &&
-              url == other.url &&
-              isMobileOptimized == other.isMobileOptimized);
-
-  @override
-  int get hashCode => name.hashCode ^ size.hashCode ^ url.hashCode ^ isMobileOptimized.hashCode;
+  final String id;
+  final String name;
+  final String parameters;
+  final String quantization;
+  final double sizeGb;
+  final int minimumRamGb;
+  final String fileName;
+  final String url;
 }

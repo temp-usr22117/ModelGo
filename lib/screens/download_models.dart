@@ -1,63 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:provider/provider.dart';
 
-import '../services/providers/model_provider.dart';
 import '../services/download_service.dart';
+import '../services/providers/model_provider.dart';
 
 class ModelBrowserScreen extends StatelessWidget {
   const ModelBrowserScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final modelProvider = Provider.of<ModelProvider>(context);
+    final models = context.watch<ModelProvider>().models;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Download Models'),
-      ),
-      body: modelProvider.models.isEmpty
-          ? const Center(
-              child: Text(
-                'No models available.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: modelProvider.models.length,
-              itemBuilder: (context, index) {
-                final model = modelProvider.models[index];
-
-                return _ModelCard(
-                  model: model,
-                  modelProvider: modelProvider,
-                );
-              },
+      appBar: AppBar(title: const Text('Quantized Models')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: const Text(
+              'Curated Q4 models for phones with 4 GB RAM or more. '
+              'More RAM generally means faster, more reliable inference.',
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...models.map(
+            (model) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _ModelCard(model: model),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _ModelCard extends StatelessWidget {
-  final Model model;
-  final ModelProvider modelProvider;
+  const _ModelCard({required this.model});
 
-  const _ModelCard({
-    required this.model,
-    required this.modelProvider,
-  });
+  final Model model;
 
   @override
   Widget build(BuildContext context) {
+    final downloadService = context.watch<DownloadService>();
+    final downloadState = downloadService.stateFor(model.fileName);
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -69,9 +65,7 @@ class _ModelCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primaryContainer,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -80,9 +74,7 @@ class _ModelCard extends StatelessWidget {
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
-
                 const SizedBox(width: 14),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,62 +86,101 @@ class _ModelCard extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       const SizedBox(height: 6),
-
                       Text(
-                        '${model.size} MB',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                        ),
+                        '${model.parameters} parameters • '
+                        '${model.sizeGb.toStringAsFixed(2)} GB',
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            if (model.isMobileOptimized)
-              Row(
-                children: [
-                  Icon(
-                    Icons.phone_android_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Mobile optimized',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text(model.quantization)),
+                Chip(label: Text('${model.minimumRamGb} GB+ RAM')),
+              ],
+            ),
+            if (downloadState.isActive) ...[
+              const SizedBox(height: 16),
+              LinearProgressIndicator(
+                value: downloadState.progress > 0
+                    ? downloadState.progress / 100
+                    : null,
               ),
-
+              const SizedBox(height: 6),
+              Text('${downloadState.progress}% downloaded'),
+            ],
             const SizedBox(height: 16),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () async {
-                  final downloadService = DownloadService(modelProvider);
-
-                  await downloadService.startDownload(
-                    model.url,
-                    model.name,
-          );
-        },
-                  icon: const Icon(Icons.download_rounded),
-                label: const Text('Download'),
+                onPressed: _canStart(downloadState.status)
+                    ? () => _startDownload(context, downloadService)
+                    : null,
+                icon: Icon(_buttonIcon(downloadState.status)),
+                label: Text(_buttonLabel(downloadState)),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _canStart(DownloadTaskStatus status) {
+    return status == DownloadTaskStatus.undefined ||
+        status == DownloadTaskStatus.failed ||
+        status == DownloadTaskStatus.canceled;
+  }
+
+  IconData _buttonIcon(DownloadTaskStatus status) {
+    if (status == DownloadTaskStatus.complete) {
+      return Icons.check_rounded;
+    }
+    if (status == DownloadTaskStatus.failed) {
+      return Icons.refresh_rounded;
+    }
+    return Icons.download_rounded;
+  }
+
+  String _buttonLabel(ModelDownloadState state) {
+    switch (state.status) {
+      case DownloadTaskStatus.enqueued:
+        return 'Waiting to download';
+      case DownloadTaskStatus.running:
+        return 'Downloading ${state.progress}%';
+      case DownloadTaskStatus.complete:
+        return 'Downloaded';
+      case DownloadTaskStatus.failed:
+        return 'Retry download';
+      case DownloadTaskStatus.canceled:
+        return 'Download again';
+      case DownloadTaskStatus.paused:
+        return 'Download paused';
+      case DownloadTaskStatus.undefined:
+        return 'Download model';
+    }
+  }
+
+  Future<void> _startDownload(
+    BuildContext context,
+    DownloadService downloadService,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final started = await downloadService.startDownload(
+      url: model.url,
+      fileName: model.fileName,
+    );
+    if (!started) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('The download could not be started.')),
+      );
+    }
   }
 }

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../services/providers/model_provider.dart';
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final modelProvider = Provider.of<ModelProvider>(context);
@@ -28,10 +30,12 @@ class HomeScreen extends StatelessWidget {
                   final model = modelProvider.filteredModels[index];
                   return ListTile(
                     title: Text(model.name),
-                    subtitle: Text('${model.size} MB'),
+                    subtitle: Text(
+                      '${model.sizeGb.toStringAsFixed(2)} GB • ${model.quantization}',
+                    ),
                     leading: Icon(Icons.arrow_downward),
                     onTap: () {
-  // Download functionality will be connected later.
+                      // Download functionality will be connected later.
                     },
                   );
                 },

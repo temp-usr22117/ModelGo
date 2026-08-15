@@ -21,14 +21,13 @@ android {
 
     defaultConfig {
         applicationId = "com.example.modelgo"
-        minSdk = flutter.minSdkVersion
+        minSdk = 29
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
         ndk {
             abiFilters += "arm64-v8a"
-            abiFilters += "x86_64"
         }
     }
 
@@ -36,6 +35,11 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
+            // flutter_downloader currently brings in Room/WorkManager versions
+            // whose generated database lookup is broken by AGP 9's R8 pass.
+            // Native C++ is still compiled with release optimizations.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
