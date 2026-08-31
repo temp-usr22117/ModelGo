@@ -17,6 +17,7 @@ void main() {
     expect(find.text('ModelGo'), findsOneWidget);
     expect(find.text('Download Models'), findsOneWidget);
     expect(find.text('My Models'), findsOneWidget);
+    expect(find.text('Knowledge Base'), findsOneWidget);
 
     await tester.tap(find.text('Download Models'));
     await tester.pumpAndSettle();
