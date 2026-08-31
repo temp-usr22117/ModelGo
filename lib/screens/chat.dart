@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/knowledge_search_result.dart';
+import '../services/knowledge_search_service.dart';
+import '../services/rag_prompt_builder.dart';
+
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
     super.key,
@@ -21,9 +25,14 @@ class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
+  final KnowledgeSearchService _knowledgeSearchService =
+      KnowledgeSearchService();
+  final RagPromptBuilder _ragPromptBuilder = const RagPromptBuilder();
 
   bool _isLoadingModel = true;
   bool _isGenerating = false;
+  bool _useKnowledgeBase = false;
+  String _generationStatus = 'Generating...';
   String? _loadError;
 
   @override
@@ -64,24 +73,55 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendPrompt() async {
-    final prompt = _textController.text.trim();
-    if (prompt.isEmpty ||
+    final question = _textController.text.trim();
+    if (question.isEmpty ||
         _isGenerating ||
         _isLoadingModel ||
         _loadError != null) {
       return;
     }
 
+    final useKnowledgeBase = _useKnowledgeBase;
     _textController.clear();
     setState(() {
-      _messages.add(_ChatMessage(role: _MessageRole.user, text: prompt));
+      _messages.add(_ChatMessage(role: _MessageRole.user, text: question));
       _isGenerating = true;
+      _generationStatus = useKnowledgeBase
+          ? 'Searching local documents...'
+          : 'Generating...';
     });
     _scrollToBottom();
 
     try {
+      var inferencePrompt = question;
+      List<KnowledgeSearchResult> sources = const [];
+
+      if (useKnowledgeBase) {
+        final searchResults = await _knowledgeSearchService.search(
+          question,
+          limit: 3,
+        );
+        final ragPrompt = _ragPromptBuilder.build(
+          question: question,
+          searchResults: searchResults,
+        );
+        inferencePrompt = ragPrompt.text;
+        sources = ragPrompt.sources;
+
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Generating grounded answer...';
+        });
+
+        // RAG prompts include their own context and are kept independent so
+        // small 2K-context mobile models do not overflow after a few queries.
+        await _channel.invokeMethod<void>('resetChat');
+      }
+
       final response = await _channel.invokeMethod<String>('infer', {
-        'prompt': prompt,
+        'prompt': inferencePrompt,
       });
       if (!mounted) {
         return;
@@ -94,9 +134,16 @@ class _ChatScreenState extends State<ChatScreen> {
             text: response?.trim().isNotEmpty == true
                 ? response!.trim()
                 : 'The model returned an empty response.',
+            sources: sources
+                .map(
+                  (source) =>
+                      '${source.document.name} • '
+                      'Passage ${source.chunk.index + 1}',
+                )
+                .toSet()
+                .toList(),
           ),
         );
-        _isGenerating = false;
       });
     } on PlatformException catch (error) {
       if (!mounted) {
@@ -109,8 +156,25 @@ class _ChatScreenState extends State<ChatScreen> {
             text: error.message ?? 'Inference failed.',
           ),
         );
-        _isGenerating = false;
       });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            role: _MessageRole.error,
+            text: 'Knowledge retrieval failed: $error',
+          ),
+        );
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+      }
     }
     _scrollToBottom();
   }
@@ -230,7 +294,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: _messages.length + (_isGenerating ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _messages.length) {
-                      return const _GeneratingBubble();
+                      return _GeneratingBubble(label: _generationStatus);
                     }
                     return _MessageBubble(message: _messages[index]);
                   },
@@ -242,28 +306,61 @@ class _ChatScreenState extends State<ChatScreen> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
-                  enabled: !_isGenerating,
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.send,
-                  decoration: const InputDecoration(
-                    hintText: 'Message the model...',
-                    border: OutlineInputBorder(),
+              Row(
+                children: [
+                  FilterChip(
+                    avatar: const Icon(Icons.library_books_outlined, size: 18),
+                    label: const Text('Use Knowledge Base'),
+                    selected: _useKnowledgeBase,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useKnowledgeBase = selected;
+                            });
+                          },
                   ),
-                  onSubmitted: (_) => _sendPrompt(),
-                ),
+                  if (_useKnowledgeBase) ...[
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Local sources • independent questions',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: 'Send',
-                onPressed: _isGenerating ? null : _sendPrompt,
-                icon: const Icon(Icons.send_rounded),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !_isGenerating,
+                      minLines: 1,
+                      maxLines: 5,
+                      textInputAction: TextInputAction.send,
+                      decoration: InputDecoration(
+                        hintText: _useKnowledgeBase
+                            ? 'Ask your local documents...'
+                            : 'Message the model...',
+                        border: const OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) => _sendPrompt(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    tooltip: 'Send',
+                    onPressed: _isGenerating ? null : _sendPrompt,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+                ],
               ),
             ],
           ),
@@ -276,10 +373,15 @@ class _ChatScreenState extends State<ChatScreen> {
 enum _MessageRole { user, assistant, error }
 
 class _ChatMessage {
-  const _ChatMessage({required this.role, required this.text});
+  const _ChatMessage({
+    required this.role,
+    required this.text,
+    this.sources = const [],
+  });
 
   final _MessageRole role;
   final String text;
+  final List<String> sources;
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -307,28 +409,52 @@ class _MessageBubble extends StatelessWidget {
               : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Text(message.text),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message.text),
+            if (message.sources.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Text(
+                'Local sources',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              for (final source in message.sources)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text('• $source'),
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }
 }
 
 class _GeneratingBubble extends StatelessWidget {
-  const _GeneratingBubble();
+  const _GeneratingBubble({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: 12),
         child: Chip(
-          avatar: SizedBox(
+          avatar: const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          label: Text('Generating...'),
+          label: Text(label),
         ),
       ),
     );

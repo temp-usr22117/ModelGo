@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <android/log.h>
+#include <algorithm>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -210,12 +211,31 @@ Java_com_example_modelgo_MainActivity_infer(
         return to_jstring(env, "Error: this conversation has reached the context limit. Start a new chat.");
     }
 
-    llama_batch batch = llama_batch_get_one(tokens.data(), token_count);
-    const int64_t generation_started = llama_time_us();
-    if (llama_decode(g_ctx, batch) != 0) {
+    const int64_t prompt_started = llama_time_us();
+    const int32_t maximum_batch = static_cast<int32_t>(llama_n_batch(g_ctx));
+    if (maximum_batch <= 0) {
         g_messages.pop_back();
-        return to_jstring(env, "Error: failed to process the prompt.");
+        return to_jstring(env, "Error: invalid model batch size.");
     }
+
+    for (int32_t offset = 0; offset < token_count; offset += maximum_batch) {
+        const int32_t batch_size = std::min(maximum_batch, token_count - offset);
+        llama_batch prompt_batch = llama_batch_get_one(
+            tokens.data() + offset,
+            batch_size);
+        if (llama_decode(g_ctx, prompt_batch) != 0) {
+            g_messages.pop_back();
+            return to_jstring(env, "Error: failed to process the prompt.");
+        }
+    }
+
+    const double prompt_seconds =
+        static_cast<double>(llama_time_us() - prompt_started) / 1000000.0;
+    MODELGO_LOG(
+        "Processed %d prompt tokens in %.2f seconds (%.2f tokens/second)",
+        token_count,
+        prompt_seconds,
+        prompt_seconds > 0.0 ? token_count / prompt_seconds : 0.0);
 
     llama_sampler * sampler = llama_sampler_chain_init(
         llama_sampler_chain_default_params());
@@ -230,8 +250,14 @@ Java_com_example_modelgo_MainActivity_infer(
 
     std::string response;
     int32_t generated_tokens = 0;
+    const int64_t generation_started = llama_time_us();
     for (int i = 0; i < 128; ++i) {
-        const llama_token token = llama_sampler_sample(sampler, g_ctx, -1);
+        llama_token token = llama_sampler_sample(sampler, g_ctx, -1);
+        for (int retry = 0;
+             response.empty() && llama_vocab_is_eog(vocab, token) && retry < 3;
+             ++retry) {
+            token = llama_sampler_sample(sampler, g_ctx, -1);
+        }
         if (llama_vocab_is_eog(vocab, token)) {
             break;
         }
@@ -268,8 +294,8 @@ Java_com_example_modelgo_MainActivity_infer(
         }
 
         llama_token next_token = token;
-        batch = llama_batch_get_one(&next_token, 1);
-        if (llama_decode(g_ctx, batch) != 0) {
+        llama_batch token_batch = llama_batch_get_one(&next_token, 1);
+        if (llama_decode(g_ctx, token_batch) != 0) {
             break;
         }
         ++generated_tokens;
