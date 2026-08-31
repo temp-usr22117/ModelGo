@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/knowledge_document.dart';
 import '../services/knowledge_base_service.dart';
+import 'knowledge_search.dart';
 
 class KnowledgeBaseScreen extends StatefulWidget {
   const KnowledgeBaseScreen({super.key});
@@ -132,10 +133,25 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
     }
   }
 
+  void _openSearch() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const KnowledgeSearchScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Knowledge Base')),
+      appBar: AppBar(
+        title: const Text('Knowledge Base'),
+        actions: [
+          IconButton(
+            tooltip: 'Search knowledge base',
+            onPressed: _documents.isEmpty ? null : _openSearch,
+            icon: const Icon(Icons.manage_search_rounded),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isImporting ? null : _importDocument,
         icon: _isImporting

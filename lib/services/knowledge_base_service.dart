@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/knowledge_document.dart';
+import '../models/knowledge_chunk.dart';
 import 'document_chunker.dart';
 import 'knowledge_chunk_store.dart';
 
@@ -116,6 +117,13 @@ class KnowledgeBaseService {
     final documents = await loadDocuments();
     documents.removeWhere((item) => item.id == document.id);
     await _saveDocuments(documents);
+  }
+
+  Future<List<KnowledgeChunk>> loadChunksForDocument(
+    KnowledgeDocument document,
+  ) async {
+    final directory = await _getKnowledgeBaseDirectory();
+    return KnowledgeChunkStore(directory).loadChunks(document.id);
   }
 
   Future<KnowledgeDocument> _prepareDocument(
