@@ -8,14 +8,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/knowledge_document.dart';
 import '../models/knowledge_chunk.dart';
 import 'document_chunker.dart';
+import 'document_text_extractor.dart';
 import 'knowledge_chunk_store.dart';
 
 class KnowledgeBaseService {
+  KnowledgeBaseService({DocumentTextExtractor? textExtractor})
+    : _textExtractor = textExtractor ?? DocumentTextExtractor();
+
   static const _directoryName = 'knowledge_base';
   static const _documentsKey = 'knowledge_base_documents';
-  static const _allowedExtensions = {'txt', 'md'};
+  static const _allowedExtensions = {'txt', 'md', 'pdf'};
   static const _maximumFileSizeBytes = 20 * 1024 * 1024;
   static const _chunker = DocumentChunker();
+
+  final DocumentTextExtractor _textExtractor;
 
   Future<List<KnowledgeDocument>> loadDocuments() async {
     final preferences = await SharedPreferences.getInstance();
@@ -61,7 +67,9 @@ class KnowledgeBaseService {
 
     final extension = pickedFile.extension?.toLowerCase();
     if (extension == null || !_allowedExtensions.contains(extension)) {
-      throw const FormatException('Only TXT and Markdown files are supported.');
+      throw const FormatException(
+        'Only TXT, Markdown, and text-based PDF files are supported.',
+      );
     }
 
     final fileSize = await pickedFile.length();
@@ -70,7 +78,6 @@ class KnowledgeBaseService {
     }
 
     final bytes = await pickedFile.readAsBytes();
-    final text = utf8.decode(bytes);
 
     final directory = await _getKnowledgeBaseDirectory();
     final chunkStore = KnowledgeChunkStore(directory);
@@ -80,7 +87,17 @@ class KnowledgeBaseService {
     await destination.writeAsBytes(bytes, flush: true);
 
     try {
+      final text = await _textExtractor.extract(
+        file: destination,
+        extension: extension,
+        bytes: bytes,
+      );
       final chunks = _chunker.createChunks(documentId: id, text: text);
+      if (chunks.isEmpty) {
+        throw const FormatException(
+          'The document does not contain any readable text.',
+        );
+      }
       await chunkStore.saveChunks(id, chunks);
 
       final document = KnowledgeDocument(
@@ -139,11 +156,14 @@ class KnowledgeBaseService {
       }
     }
 
-    final bytes = await File(document.path).readAsBytes();
-    final chunks = _chunker.createChunks(
-      documentId: document.id,
-      text: utf8.decode(bytes),
+    final file = File(document.path);
+    final bytes = await file.readAsBytes();
+    final text = await _textExtractor.extract(
+      file: file,
+      extension: document.extension,
+      bytes: bytes,
     );
+    final chunks = _chunker.createChunks(documentId: document.id, text: text);
     await chunkStore.saveChunks(document.id, chunks);
     return document.copyWith(chunkCount: chunks.length);
   }

@@ -214,8 +214,8 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Import a TXT or Markdown file to start building your local '
-                'knowledge base.',
+                'Import a TXT, Markdown, or text-based PDF file to start '
+                'building your local knowledge base.',
                 textAlign: TextAlign.center,
               ),
             ],
