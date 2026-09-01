@@ -33,12 +33,76 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isGenerating = false;
   bool _useKnowledgeBase = false;
   String _generationStatus = 'Generating...';
+  bool _cancelRequested = false;
+  bool _nativeInferenceActive = false;
+  _ChatMessage? _streamingMessage;
+  _InferenceMetrics? _activeMetrics;
+  List<String> _pendingSources = const [];
   String? _loadError;
 
   @override
   void initState() {
     super.initState();
+    _channel.setMethodCallHandler(_handleNativeEvent);
     _loadModel();
+  }
+
+  Future<void> _handleNativeEvent(MethodCall call) async {
+    if (!mounted || !_isGenerating) {
+      return;
+    }
+
+    final arguments = call.arguments is Map
+        ? Map<Object?, Object?>.from(call.arguments as Map)
+        : const <Object?, Object?>{};
+
+    switch (call.method) {
+      case 'inferenceToken':
+        final token = arguments['token'] as String? ?? '';
+        if (token.isEmpty) {
+          return;
+        }
+        setState(() {
+          _generationStatus = _cancelRequested
+              ? 'Stopping...'
+              : 'Generating response...';
+          final message = _streamingMessage;
+          if (message == null) {
+            final streamingMessage = _ChatMessage(
+              role: _MessageRole.assistant,
+              text: token,
+              sources: _pendingSources,
+              metrics: _activeMetrics,
+            );
+            _streamingMessage = streamingMessage;
+            _messages.add(streamingMessage);
+          } else {
+            message.text += token;
+          }
+        });
+        _scrollToBottom();
+        return;
+      case 'promptProcessed':
+        setState(() {
+          _activeMetrics
+            ?..promptTokenCount = (arguments['tokenCount'] as num?)?.toInt()
+            ..promptSeconds = (arguments['seconds'] as num?)?.toDouble();
+          _generationStatus = _cancelRequested
+              ? 'Stopping...'
+              : 'Generating response...';
+        });
+        return;
+      case 'generationCompleted':
+        setState(() {
+          _activeMetrics
+            ?..generatedTokenCount = (arguments['tokenCount'] as num?)?.toInt()
+            ..generationSeconds = (arguments['seconds'] as num?)?.toDouble();
+          if (arguments['cancelled'] == true) {
+            _cancelRequested = true;
+          }
+        });
+        return;
+    }
   }
 
   Future<void> _loadModel() async {
@@ -82,13 +146,19 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final useKnowledgeBase = _useKnowledgeBase;
+    final totalStopwatch = Stopwatch()..start();
     _textController.clear();
     setState(() {
       _messages.add(_ChatMessage(role: _MessageRole.user, text: question));
       _isGenerating = true;
+      _cancelRequested = false;
+      _nativeInferenceActive = false;
+      _streamingMessage = null;
+      _activeMetrics = _InferenceMetrics();
+      _pendingSources = const [];
       _generationStatus = useKnowledgeBase
           ? 'Searching local documents...'
-          : 'Generating...';
+          : 'Thinking...';
     });
     _scrollToBottom();
 
@@ -97,10 +167,14 @@ class _ChatScreenState extends State<ChatScreen> {
       List<KnowledgeSearchResult> sources = const [];
 
       if (useKnowledgeBase) {
+        final retrievalStopwatch = Stopwatch()..start();
         final searchResults = await _knowledgeSearchService.search(
           question,
           limit: 3,
         );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
         final ragPrompt = _ragPromptBuilder.build(
           question: question,
           searchResults: searchResults,
@@ -111,72 +185,152 @@ class _ChatScreenState extends State<ChatScreen> {
         if (!mounted) {
           return;
         }
+        _pendingSources = sources
+            .map(
+              (source) =>
+                  '${source.document.name} • '
+                  'Passage ${source.chunk.index + 1}',
+            )
+            .toSet()
+            .toList();
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
         setState(() {
-          _generationStatus = 'Generating grounded answer...';
+          _generationStatus = 'Thinking with local context...';
         });
 
         // RAG prompts include their own context and are kept independent so
         // small 2K-context mobile models do not overflow after a few queries.
         await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
       }
 
+      _nativeInferenceActive = true;
       final response = await _channel.invokeMethod<String>('infer', {
         'prompt': inferencePrompt,
       });
+      _nativeInferenceActive = false;
       if (!mounted) {
         return;
       }
 
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
       setState(() {
-        _messages.add(
-          _ChatMessage(
-            role: _MessageRole.assistant,
-            text: response?.trim().isNotEmpty == true
-                ? response!.trim()
-                : 'The model returned an empty response.',
-            sources: sources
-                .map(
-                  (source) =>
-                      '${source.document.name} • '
-                      'Passage ${source.chunk.index + 1}',
-                )
-                .toSet()
-                .toList(),
-          ),
-        );
+        _finishResponse(response ?? '');
       });
     } on PlatformException catch (error) {
       if (!mounted) {
         return;
       }
+      _nativeInferenceActive = false;
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
       setState(() {
-        _messages.add(
-          _ChatMessage(
-            role: _MessageRole.error,
-            text: error.message ?? 'Inference failed.',
-          ),
-        );
+        if (_cancelRequested) {
+          _finishResponse('');
+        } else {
+          _messages.add(
+            _ChatMessage(
+              role: _MessageRole.error,
+              text: error.message ?? 'Inference failed.',
+            ),
+          );
+        }
       });
     } catch (error) {
       if (!mounted) {
         return;
       }
+      _nativeInferenceActive = false;
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
       setState(() {
-        _messages.add(
-          _ChatMessage(
-            role: _MessageRole.error,
-            text: 'Knowledge retrieval failed: $error',
-          ),
-        );
+        if (_cancelRequested) {
+          _finishResponse('');
+        } else {
+          _messages.add(
+            _ChatMessage(
+              role: _MessageRole.error,
+              text: 'Request failed: $error',
+            ),
+          );
+        }
       });
     } finally {
       if (mounted) {
         setState(() {
           _isGenerating = false;
+          _nativeInferenceActive = false;
         });
       }
     }
     _scrollToBottom();
+  }
+
+  void _finishResponse(String response) {
+    final cleanResponse = response.trim();
+    final existingMessage = _streamingMessage;
+    if (existingMessage != null) {
+      if (cleanResponse.isNotEmpty) {
+        existingMessage.text = cleanResponse;
+      }
+      existingMessage
+        ..metrics = _activeMetrics
+        ..wasStopped = _cancelRequested;
+      return;
+    }
+
+    _messages.add(
+      _ChatMessage(
+        role: _MessageRole.assistant,
+        text: cleanResponse.isNotEmpty
+            ? cleanResponse
+            : _cancelRequested
+            ? 'Generation stopped.'
+            : 'The model returned an empty response.',
+        sources: _pendingSources,
+        metrics: _activeMetrics,
+        wasStopped: _cancelRequested,
+      ),
+    );
+  }
+
+  void _finishCancelledResponse(int totalMilliseconds) {
+    _activeMetrics?.totalMilliseconds = totalMilliseconds;
+    setState(() {
+      _finishResponse('');
+    });
+  }
+
+  Future<void> _cancelGeneration() async {
+    if (!_isGenerating || _cancelRequested) {
+      return;
+    }
+
+    setState(() {
+      _cancelRequested = true;
+      _generationStatus = 'Stopping...';
+    });
+
+    if (_nativeInferenceActive) {
+      try {
+        await _channel.invokeMethod<bool>('cancelInference');
+      } on PlatformException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.message ?? 'Could not stop generation.'),
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _resetChat() async {
@@ -188,7 +342,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) {
       return;
     }
-    setState(_messages.clear);
+    setState(() {
+      _messages.clear();
+      _streamingMessage = null;
+      _activeMetrics = null;
+      _pendingSources = const [];
+    });
   }
 
   void _scrollToBottom() {
@@ -206,6 +365,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    if (_nativeInferenceActive) {
+      _channel.invokeMethod<bool>('cancelInference');
+    }
+    _channel.setMethodCallHandler(null);
     _channel.invokeMethod<void>('unloadModel');
     _textController.dispose();
     _scrollController.dispose();
@@ -356,9 +519,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    tooltip: 'Send',
-                    onPressed: _isGenerating ? null : _sendPrompt,
-                    icon: const Icon(Icons.send_rounded),
+                    tooltip: _isGenerating ? 'Stop generating' : 'Send',
+                    onPressed: _isGenerating ? _cancelGeneration : _sendPrompt,
+                    icon: Icon(
+                      _isGenerating ? Icons.stop_rounded : Icons.send_rounded,
+                    ),
                   ),
                 ],
               ),
@@ -373,15 +538,57 @@ class _ChatScreenState extends State<ChatScreen> {
 enum _MessageRole { user, assistant, error }
 
 class _ChatMessage {
-  const _ChatMessage({
+  _ChatMessage({
     required this.role,
     required this.text,
     this.sources = const [],
+    this.metrics,
+    this.wasStopped = false,
   });
 
   final _MessageRole role;
-  final String text;
+  String text;
   final List<String> sources;
+  _InferenceMetrics? metrics;
+  bool wasStopped;
+}
+
+class _InferenceMetrics {
+  int? retrievalMilliseconds;
+  int? promptTokenCount;
+  double? promptSeconds;
+  int? generatedTokenCount;
+  double? generationSeconds;
+  int? totalMilliseconds;
+
+  bool get hasData =>
+      retrievalMilliseconds != null ||
+      promptSeconds != null ||
+      generationSeconds != null ||
+      totalMilliseconds != null;
+
+  String get summary {
+    final parts = <String>[];
+    if (retrievalMilliseconds case final milliseconds?) {
+      parts.add('Retrieval: $milliseconds ms');
+    }
+    if (promptSeconds case final seconds?) {
+      parts.add(
+        'Prompt: ${promptTokenCount ?? 0} tokens • '
+        '${seconds.toStringAsFixed(1)} s',
+      );
+    }
+    if (generationSeconds case final seconds?) {
+      parts.add(
+        'Output: ${generatedTokenCount ?? 0} tokens • '
+        '${seconds.toStringAsFixed(1)} s',
+      );
+    }
+    if (totalMilliseconds case final milliseconds?) {
+      parts.add('Total: ${(milliseconds / 1000).toStringAsFixed(1)} s');
+    }
+    return parts.join('\n');
+  }
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -413,6 +620,10 @@ class _MessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(message.text),
+            if (message.wasStopped) ...[
+              const SizedBox(height: 6),
+              Text('Stopped', style: Theme.of(context).textTheme.labelMedium),
+            ],
             if (message.sources.isNotEmpty) ...[
               const SizedBox(height: 10),
               const Divider(height: 1),
@@ -429,6 +640,15 @@ class _MessageBubble extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text('• $source'),
                 ),
+            ],
+            if (message.metrics?.hasData == true) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Text(
+                message.metrics!.summary,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ],
         ),
