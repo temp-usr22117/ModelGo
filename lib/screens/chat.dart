@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../models/knowledge_search_result.dart';
 import '../services/knowledge_search_service.dart';
 import '../services/rag_prompt_builder.dart';
+import '../services/web_rag_prompt_builder.dart';
+import '../services/web_search_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -28,16 +30,19 @@ class _ChatScreenState extends State<ChatScreen> {
   final KnowledgeSearchService _knowledgeSearchService =
       KnowledgeSearchService();
   final RagPromptBuilder _ragPromptBuilder = const RagPromptBuilder();
+  final WebSearchService _webSearchService = WebSearchService();
+  final WebRagPromptBuilder _webRagPromptBuilder = const WebRagPromptBuilder();
 
   bool _isLoadingModel = true;
   bool _isGenerating = false;
   bool _useKnowledgeBase = false;
+  bool _useWebSearch = false;
   String _generationStatus = 'Generating...';
   bool _cancelRequested = false;
   bool _nativeInferenceActive = false;
   _ChatMessage? _streamingMessage;
   _InferenceMetrics? _activeMetrics;
-  List<String> _pendingSources = const [];
+  List<_MessageSource> _pendingSources = const [];
   String? _loadError;
 
   @override
@@ -146,6 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     final useKnowledgeBase = _useKnowledgeBase;
+    final useWebSearch = _useWebSearch;
     final totalStopwatch = Stopwatch()..start();
     _textController.clear();
     setState(() {
@@ -158,13 +164,14 @@ class _ChatScreenState extends State<ChatScreen> {
       _pendingSources = const [];
       _generationStatus = useKnowledgeBase
           ? 'Searching local documents...'
+          : useWebSearch
+          ? 'Searching the web...'
           : 'Thinking...';
     });
     _scrollToBottom();
 
     try {
       var inferencePrompt = question;
-      List<KnowledgeSearchResult> sources = const [];
 
       if (useKnowledgeBase) {
         final retrievalStopwatch = Stopwatch()..start();
@@ -180,16 +187,17 @@ class _ChatScreenState extends State<ChatScreen> {
           searchResults: searchResults,
         );
         inferencePrompt = ragPrompt.text;
-        sources = ragPrompt.sources;
-
         if (!mounted) {
           return;
         }
-        _pendingSources = sources
+        _pendingSources = ragPrompt.sources
             .map(
-              (source) =>
-                  '${source.document.name} • '
-                  'Passage ${source.chunk.index + 1}',
+              (source) => _MessageSource(
+                label:
+                    '${source.document.name} • '
+                    'Passage ${source.chunk.index + 1}',
+                type: _SourceType.local,
+              ),
             )
             .toSet()
             .toList();
@@ -203,6 +211,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
         // RAG prompts include their own context and are kept independent so
         // small 2K-context mobile models do not overflow after a few queries.
+        await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+      } else if (useWebSearch) {
+        final retrievalStopwatch = Stopwatch()..start();
+        final searchResults = await _webSearchService.search(
+          question,
+          limit: 3,
+        );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
+        final ragPrompt = _webRagPromptBuilder.build(
+          question: question,
+          searchResults: searchResults,
+        );
+        inferencePrompt = ragPrompt.text;
+
+        if (!mounted) {
+          return;
+        }
+        _pendingSources = ragPrompt.sources
+            .map(
+              (source) => _MessageSource(
+                label: source.title,
+                type: _SourceType.web,
+                url: source.url,
+              ),
+            )
+            .toList(growable: false);
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Thinking with web sources...';
+        });
+
+        // Web RAG prompts are independent for the same small-context reason as
+        // local RAG prompts.
         await _channel.invokeMethod<void>('resetChat');
         if (_cancelRequested) {
           _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
@@ -370,6 +420,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _channel.setMethodCallHandler(null);
     _channel.invokeMethod<void>('unloadModel');
+    _webSearchService.close();
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -472,7 +523,9 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   FilterChip(
                     avatar: const Icon(Icons.library_books_outlined, size: 18),
@@ -483,20 +536,41 @@ class _ChatScreenState extends State<ChatScreen> {
                         : (selected) {
                             setState(() {
                               _useKnowledgeBase = selected;
+                              if (selected) {
+                                _useWebSearch = false;
+                              }
                             });
                           },
                   ),
-                  if (_useKnowledgeBase) ...[
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Local sources • independent questions',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
+                  FilterChip(
+                    avatar: const Icon(Icons.public_rounded, size: 18),
+                    label: const Text('Search Web'),
+                    selected: _useWebSearch,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useWebSearch = selected;
+                              if (selected) {
+                                _useKnowledgeBase = false;
+                              }
+                            });
+                          },
+                  ),
                 ],
               ),
+              if (_useKnowledgeBase || _useWebSearch) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _useKnowledgeBase
+                        ? 'Local sources • independent questions'
+                        : 'Free Wikipedia web sources • internet required',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -511,6 +585,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: _useKnowledgeBase
                             ? 'Ask your local documents...'
+                            : _useWebSearch
+                            ? 'Ask with web search...'
                             : 'Message the model...',
                         border: const OutlineInputBorder(),
                       ),
@@ -548,9 +624,29 @@ class _ChatMessage {
 
   final _MessageRole role;
   String text;
-  final List<String> sources;
+  final List<_MessageSource> sources;
   _InferenceMetrics? metrics;
   bool wasStopped;
+}
+
+enum _SourceType { local, web }
+
+class _MessageSource {
+  const _MessageSource({required this.label, required this.type, this.url});
+
+  final String label;
+  final _SourceType type;
+  final Uri? url;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _MessageSource &&
+      other.label == label &&
+      other.type == type &&
+      other.url == url;
+
+  @override
+  int get hashCode => Object.hash(label, type, url);
 }
 
 class _InferenceMetrics {
@@ -629,7 +725,9 @@ class _MessageBubble extends StatelessWidget {
               const Divider(height: 1),
               const SizedBox(height: 8),
               Text(
-                'Local sources',
+                message.sources.any((source) => source.type == _SourceType.web)
+                    ? 'Web sources'
+                    : 'Local sources',
                 style: Theme.of(
                   context,
                 ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -638,7 +736,27 @@ class _MessageBubble extends StatelessWidget {
               for (final source in message.sources)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text('• $source'),
+                  child: source.url == null
+                      ? Text('• ${source.label}')
+                      : InkWell(
+                          onTap: () => _openSource(context, source.url!),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '• ${source.label}',
+                                  style: TextStyle(
+                                    color: colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.open_in_new_rounded, size: 14),
+                            ],
+                          ),
+                        ),
                 ),
             ],
             if (message.metrics?.hasData == true) ...[
@@ -654,6 +772,17 @@ class _MessageBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openSource(BuildContext context, Uri url) async {
+    if (await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      return;
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open source.')));
+    }
   }
 }
 
