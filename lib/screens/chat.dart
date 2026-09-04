@@ -6,6 +6,7 @@ import '../services/knowledge_search_service.dart';
 import '../services/rag_prompt_builder.dart';
 import '../services/web_rag_prompt_builder.dart';
 import '../services/web_search_service.dart';
+import '../services/webpage_context_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -25,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   static const _channel = MethodChannel('com.example.modelgo/inference');
 
   final _textController = TextEditingController();
+  final _webpageController = TextEditingController();
   final _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
   final KnowledgeSearchService _knowledgeSearchService =
@@ -32,11 +34,13 @@ class _ChatScreenState extends State<ChatScreen> {
   final RagPromptBuilder _ragPromptBuilder = const RagPromptBuilder();
   final WebSearchService _webSearchService = WebSearchService();
   final WebRagPromptBuilder _webRagPromptBuilder = const WebRagPromptBuilder();
+  final WebpageContextService _webpageContextService = WebpageContextService();
 
   bool _isLoadingModel = true;
   bool _isGenerating = false;
   bool _useKnowledgeBase = false;
   bool _useWebSearch = false;
+  bool _useWebpage = false;
   String _generationStatus = 'Generating...';
   bool _cancelRequested = false;
   bool _nativeInferenceActive = false;
@@ -143,15 +147,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendPrompt() async {
     final question = _textController.text.trim();
+    final webpageUrl = _webpageController.text.trim();
     if (question.isEmpty ||
         _isGenerating ||
         _isLoadingModel ||
         _loadError != null) {
       return;
     }
+    if (_useWebpage && webpageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter the webpage URL first.')),
+      );
+      return;
+    }
 
     final useKnowledgeBase = _useKnowledgeBase;
     final useWebSearch = _useWebSearch;
+    final useWebpage = _useWebpage;
     final totalStopwatch = Stopwatch()..start();
     _textController.clear();
     setState(() {
@@ -164,6 +176,8 @@ class _ChatScreenState extends State<ChatScreen> {
       _pendingSources = const [];
       _generationStatus = useKnowledgeBase
           ? 'Searching local documents...'
+          : useWebpage
+          ? 'Reading webpage...'
           : useWebSearch
           ? 'Searching the web...'
           : 'Thinking...';
@@ -211,6 +225,44 @@ class _ChatScreenState extends State<ChatScreen> {
 
         // RAG prompts include their own context and are kept independent so
         // small 2K-context mobile models do not overflow after a few queries.
+        await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+      } else if (useWebpage) {
+        final retrievalStopwatch = Stopwatch()..start();
+        final webpage = await _webpageContextService.retrieve(
+          url: webpageUrl,
+          question: question,
+        );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
+        final ragPrompt = _webRagPromptBuilder.build(
+          question: question,
+          searchResults: [webpage],
+        );
+        inferencePrompt = ragPrompt.text;
+
+        if (!mounted) {
+          return;
+        }
+        _pendingSources = [
+          _MessageSource(
+            label: webpage.title,
+            type: _SourceType.web,
+            url: webpage.url,
+          ),
+        ];
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Thinking with webpage context...';
+        });
+
         await _channel.invokeMethod<void>('resetChat');
         if (_cancelRequested) {
           _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
@@ -421,7 +473,9 @@ class _ChatScreenState extends State<ChatScreen> {
     _channel.setMethodCallHandler(null);
     _channel.invokeMethod<void>('unloadModel');
     _webSearchService.close();
+    _webpageContextService.close();
     _textController.dispose();
+    _webpageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -538,13 +592,14 @@ class _ChatScreenState extends State<ChatScreen> {
                               _useKnowledgeBase = selected;
                               if (selected) {
                                 _useWebSearch = false;
+                                _useWebpage = false;
                               }
                             });
                           },
                   ),
                   FilterChip(
                     avatar: const Icon(Icons.public_rounded, size: 18),
-                    label: const Text('Search Web'),
+                    label: const Text('Search Wikipedia'),
                     selected: _useWebSearch,
                     onSelected: _isGenerating
                         ? null
@@ -553,25 +608,60 @@ class _ChatScreenState extends State<ChatScreen> {
                               _useWebSearch = selected;
                               if (selected) {
                                 _useKnowledgeBase = false;
+                                _useWebpage = false;
+                              }
+                            });
+                          },
+                  ),
+                  FilterChip(
+                    avatar: const Icon(Icons.link_rounded, size: 18),
+                    label: const Text('Ask Webpage'),
+                    selected: _useWebpage,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useWebpage = selected;
+                              if (selected) {
+                                _useKnowledgeBase = false;
+                                _useWebSearch = false;
                               }
                             });
                           },
                   ),
                 ],
               ),
-              if (_useKnowledgeBase || _useWebSearch) ...[
+              if (_useKnowledgeBase || _useWebSearch || _useWebpage) ...[
                 const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _useKnowledgeBase
                         ? 'Local sources • independent questions'
-                        : 'Free Wikipedia web sources • internet required',
+                        : _useWebpage
+                        ? 'One public webpage • no API key required'
+                        : 'Free Wikipedia sources • internet required',
                     style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],
               const SizedBox(height: 8),
+              if (_useWebpage) ...[
+                TextField(
+                  controller: _webpageController,
+                  enabled: !_isGenerating,
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Webpage URL',
+                    hintText: 'https://example.com/article',
+                    prefixIcon: Icon(Icons.link_rounded),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -585,6 +675,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: _useKnowledgeBase
                             ? 'Ask your local documents...'
+                            : _useWebpage
+                            ? 'Ask about this webpage...'
                             : _useWebSearch
                             ? 'Ask with web search...'
                             : 'Message the model...',

@@ -74,7 +74,7 @@ class DashboardScreen extends StatelessWidget {
               _DashboardCard(
                 icon: Icons.library_books_rounded,
                 title: 'Knowledge Base',
-                description: 'Import local documents for future RAG.',
+                description: 'Import local documents for grounded answers.',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -83,29 +83,6 @@ class DashboardScreen extends StatelessWidget {
                     ),
                   );
                 },
-              ),
-
-              const SizedBox(height: 32),
-
-              const Text(
-                'Recent Models',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 12),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'No models downloaded yet.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
-                ),
               ),
             ],
           ),
