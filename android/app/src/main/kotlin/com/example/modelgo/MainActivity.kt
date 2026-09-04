@@ -3,6 +3,7 @@ package com.example.modelgo
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.Keep
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -11,6 +12,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
     private var pendingNotificationResult: MethodChannel.Result? = null
     private val inferenceExecutor = Executors.newSingleThreadExecutor()
+    private lateinit var inferenceChannel: MethodChannel
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -25,10 +27,11 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(
+        inferenceChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             INFERENCE_CHANNEL,
-        ).setMethodCallHandler { call, result ->
+        )
+        inferenceChannel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "loadModel" -> {
                     val modelPath = call.argument<String>("modelPath")
@@ -44,8 +47,15 @@ class MainActivity : FlutterActivity() {
                     if (prompt == null) {
                         result.error("invalid_prompt", "A prompt is required.", null)
                     } else {
-                        runInferenceTask(result) { infer(prompt) }
+                        prepareInference()
+                        val callback = InferenceCallback()
+                        runInferenceTask(result) { infer(prompt, callback) }
                     }
+                }
+
+                "cancelInference" -> {
+                    cancelInference()
+                    result.success(true)
                 }
 
                 "resetChat" -> runInferenceTask(result) {
@@ -59,6 +69,47 @@ class MainActivity : FlutterActivity() {
                 }
 
                 else -> result.notImplemented()
+            }
+        }
+    }
+
+    @Keep
+    private inner class InferenceCallback {
+        fun onToken(token: String) {
+            runOnUiThread {
+                inferenceChannel.invokeMethod(
+                    "inferenceToken",
+                    mapOf("token" to token),
+                )
+            }
+        }
+
+        fun onPromptProcessed(tokenCount: Int, seconds: Double) {
+            runOnUiThread {
+                inferenceChannel.invokeMethod(
+                    "promptProcessed",
+                    mapOf(
+                        "tokenCount" to tokenCount,
+                        "seconds" to seconds,
+                    ),
+                )
+            }
+        }
+
+        fun onGenerationCompleted(
+            tokenCount: Int,
+            seconds: Double,
+            cancelled: Boolean,
+        ) {
+            runOnUiThread {
+                inferenceChannel.invokeMethod(
+                    "generationCompleted",
+                    mapOf(
+                        "tokenCount" to tokenCount,
+                        "seconds" to seconds,
+                        "cancelled" to cancelled,
+                    ),
+                )
             }
         }
     }
@@ -112,7 +163,11 @@ class MainActivity : FlutterActivity() {
 
     private external fun loadModel(modelPath: String): Boolean
 
-    private external fun infer(prompt: String): String
+    private external fun infer(prompt: String, callback: InferenceCallback): String
+
+    private external fun prepareInference()
+
+    private external fun cancelInference()
 
     private external fun resetChat()
 

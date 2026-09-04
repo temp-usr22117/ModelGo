@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../services/knowledge_search_service.dart';
+import '../services/rag_prompt_builder.dart';
+import '../services/web_rag_prompt_builder.dart';
+import '../services/web_search_service.dart';
+import '../services/webpage_context_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -19,17 +26,92 @@ class _ChatScreenState extends State<ChatScreen> {
   static const _channel = MethodChannel('com.example.modelgo/inference');
 
   final _textController = TextEditingController();
+  final _webpageController = TextEditingController();
   final _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
+  final KnowledgeSearchService _knowledgeSearchService =
+      KnowledgeSearchService();
+  final RagPromptBuilder _ragPromptBuilder = const RagPromptBuilder();
+  final WebSearchService _webSearchService = WebSearchService();
+  final WebRagPromptBuilder _webRagPromptBuilder = const WebRagPromptBuilder();
+  final WebpageContextService _webpageContextService = WebpageContextService();
 
   bool _isLoadingModel = true;
   bool _isGenerating = false;
+  bool _useKnowledgeBase = false;
+  bool _useWebSearch = false;
+  bool _useWebpage = false;
+  String _generationStatus = 'Generating...';
+  bool _cancelRequested = false;
+  bool _nativeInferenceActive = false;
+  _ChatMessage? _streamingMessage;
+  _InferenceMetrics? _activeMetrics;
+  List<_MessageSource> _pendingSources = const [];
   String? _loadError;
 
   @override
   void initState() {
     super.initState();
+    _channel.setMethodCallHandler(_handleNativeEvent);
     _loadModel();
+  }
+
+  Future<void> _handleNativeEvent(MethodCall call) async {
+    if (!mounted || !_isGenerating) {
+      return;
+    }
+
+    final arguments = call.arguments is Map
+        ? Map<Object?, Object?>.from(call.arguments as Map)
+        : const <Object?, Object?>{};
+
+    switch (call.method) {
+      case 'inferenceToken':
+        final token = arguments['token'] as String? ?? '';
+        if (token.isEmpty) {
+          return;
+        }
+        setState(() {
+          _generationStatus = _cancelRequested
+              ? 'Stopping...'
+              : 'Generating response...';
+          final message = _streamingMessage;
+          if (message == null) {
+            final streamingMessage = _ChatMessage(
+              role: _MessageRole.assistant,
+              text: token,
+              sources: _pendingSources,
+              metrics: _activeMetrics,
+            );
+            _streamingMessage = streamingMessage;
+            _messages.add(streamingMessage);
+          } else {
+            message.text += token;
+          }
+        });
+        _scrollToBottom();
+        return;
+      case 'promptProcessed':
+        setState(() {
+          _activeMetrics
+            ?..promptTokenCount = (arguments['tokenCount'] as num?)?.toInt()
+            ..promptSeconds = (arguments['seconds'] as num?)?.toDouble();
+          _generationStatus = _cancelRequested
+              ? 'Stopping...'
+              : 'Generating response...';
+        });
+        return;
+      case 'generationCompleted':
+        setState(() {
+          _activeMetrics
+            ?..generatedTokenCount = (arguments['tokenCount'] as num?)?.toInt()
+            ..generationSeconds = (arguments['seconds'] as num?)?.toDouble();
+          if (arguments['cancelled'] == true) {
+            _cancelRequested = true;
+          }
+        });
+        return;
+    }
   }
 
   Future<void> _loadModel() async {
@@ -64,55 +146,293 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendPrompt() async {
-    final prompt = _textController.text.trim();
-    if (prompt.isEmpty ||
+    final question = _textController.text.trim();
+    final webpageUrl = _webpageController.text.trim();
+    if (question.isEmpty ||
         _isGenerating ||
         _isLoadingModel ||
         _loadError != null) {
       return;
     }
+    if (_useWebpage && webpageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter the webpage URL first.')),
+      );
+      return;
+    }
 
+    final useKnowledgeBase = _useKnowledgeBase;
+    final useWebSearch = _useWebSearch;
+    final useWebpage = _useWebpage;
+    final totalStopwatch = Stopwatch()..start();
     _textController.clear();
     setState(() {
-      _messages.add(_ChatMessage(role: _MessageRole.user, text: prompt));
+      _messages.add(_ChatMessage(role: _MessageRole.user, text: question));
       _isGenerating = true;
+      _cancelRequested = false;
+      _nativeInferenceActive = false;
+      _streamingMessage = null;
+      _activeMetrics = _InferenceMetrics();
+      _pendingSources = const [];
+      _generationStatus = useKnowledgeBase
+          ? 'Searching local documents...'
+          : useWebpage
+          ? 'Reading webpage...'
+          : useWebSearch
+          ? 'Searching the web...'
+          : 'Thinking...';
     });
     _scrollToBottom();
 
     try {
+      var inferencePrompt = question;
+
+      if (useKnowledgeBase) {
+        final retrievalStopwatch = Stopwatch()..start();
+        final searchResults = await _knowledgeSearchService.search(
+          question,
+          limit: 3,
+        );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
+        final ragPrompt = _ragPromptBuilder.build(
+          question: question,
+          searchResults: searchResults,
+        );
+        inferencePrompt = ragPrompt.text;
+        if (!mounted) {
+          return;
+        }
+        _pendingSources = ragPrompt.sources
+            .map(
+              (source) => _MessageSource(
+                label:
+                    '${source.document.name} • '
+                    'Passage ${source.chunk.index + 1}',
+                type: _SourceType.local,
+              ),
+            )
+            .toSet()
+            .toList();
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Thinking with local context...';
+        });
+
+        // RAG prompts include their own context and are kept independent so
+        // small 2K-context mobile models do not overflow after a few queries.
+        await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+      } else if (useWebpage) {
+        final retrievalStopwatch = Stopwatch()..start();
+        final webpage = await _webpageContextService.retrieve(
+          url: webpageUrl,
+          question: question,
+        );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
+        final ragPrompt = _webRagPromptBuilder.build(
+          question: question,
+          searchResults: [webpage],
+        );
+        inferencePrompt = ragPrompt.text;
+
+        if (!mounted) {
+          return;
+        }
+        _pendingSources = [
+          _MessageSource(
+            label: webpage.title,
+            type: _SourceType.web,
+            url: webpage.url,
+          ),
+        ];
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Thinking with webpage context...';
+        });
+
+        await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+      } else if (useWebSearch) {
+        final retrievalStopwatch = Stopwatch()..start();
+        final searchResults = await _webSearchService.search(
+          question,
+          limit: 3,
+        );
+        retrievalStopwatch.stop();
+        _activeMetrics?.retrievalMilliseconds =
+            retrievalStopwatch.elapsedMilliseconds;
+        final ragPrompt = _webRagPromptBuilder.build(
+          question: question,
+          searchResults: searchResults,
+        );
+        inferencePrompt = ragPrompt.text;
+
+        if (!mounted) {
+          return;
+        }
+        _pendingSources = ragPrompt.sources
+            .map(
+              (source) => _MessageSource(
+                label: source.title,
+                type: _SourceType.web,
+                url: source.url,
+              ),
+            )
+            .toList(growable: false);
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+        setState(() {
+          _generationStatus = 'Thinking with web sources...';
+        });
+
+        // Web RAG prompts are independent for the same small-context reason as
+        // local RAG prompts.
+        await _channel.invokeMethod<void>('resetChat');
+        if (_cancelRequested) {
+          _finishCancelledResponse(totalStopwatch.elapsedMilliseconds);
+          return;
+        }
+      }
+
+      _nativeInferenceActive = true;
       final response = await _channel.invokeMethod<String>('infer', {
-        'prompt': prompt,
+        'prompt': inferencePrompt,
       });
+      _nativeInferenceActive = false;
       if (!mounted) {
         return;
       }
 
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
       setState(() {
-        _messages.add(
-          _ChatMessage(
-            role: _MessageRole.assistant,
-            text: response?.trim().isNotEmpty == true
-                ? response!.trim()
-                : 'The model returned an empty response.',
-          ),
-        );
-        _isGenerating = false;
+        _finishResponse(response ?? '');
       });
     } on PlatformException catch (error) {
       if (!mounted) {
         return;
       }
+      _nativeInferenceActive = false;
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
       setState(() {
-        _messages.add(
-          _ChatMessage(
-            role: _MessageRole.error,
-            text: error.message ?? 'Inference failed.',
-          ),
-        );
-        _isGenerating = false;
+        if (_cancelRequested) {
+          _finishResponse('');
+        } else {
+          _messages.add(
+            _ChatMessage(
+              role: _MessageRole.error,
+              text: error.message ?? 'Inference failed.',
+            ),
+          );
+        }
       });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _nativeInferenceActive = false;
+      totalStopwatch.stop();
+      _activeMetrics?.totalMilliseconds = totalStopwatch.elapsedMilliseconds;
+      setState(() {
+        if (_cancelRequested) {
+          _finishResponse('');
+        } else {
+          _messages.add(
+            _ChatMessage(
+              role: _MessageRole.error,
+              text: 'Request failed: $error',
+            ),
+          );
+        }
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+          _nativeInferenceActive = false;
+        });
+      }
     }
     _scrollToBottom();
+  }
+
+  void _finishResponse(String response) {
+    final cleanResponse = response.trim();
+    final existingMessage = _streamingMessage;
+    if (existingMessage != null) {
+      if (cleanResponse.isNotEmpty) {
+        existingMessage.text = cleanResponse;
+      }
+      existingMessage
+        ..metrics = _activeMetrics
+        ..wasStopped = _cancelRequested;
+      return;
+    }
+
+    _messages.add(
+      _ChatMessage(
+        role: _MessageRole.assistant,
+        text: cleanResponse.isNotEmpty
+            ? cleanResponse
+            : _cancelRequested
+            ? 'Generation stopped.'
+            : 'The model returned an empty response.',
+        sources: _pendingSources,
+        metrics: _activeMetrics,
+        wasStopped: _cancelRequested,
+      ),
+    );
+  }
+
+  void _finishCancelledResponse(int totalMilliseconds) {
+    _activeMetrics?.totalMilliseconds = totalMilliseconds;
+    setState(() {
+      _finishResponse('');
+    });
+  }
+
+  Future<void> _cancelGeneration() async {
+    if (!_isGenerating || _cancelRequested) {
+      return;
+    }
+
+    setState(() {
+      _cancelRequested = true;
+      _generationStatus = 'Stopping...';
+    });
+
+    if (_nativeInferenceActive) {
+      try {
+        await _channel.invokeMethod<bool>('cancelInference');
+      } on PlatformException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error.message ?? 'Could not stop generation.'),
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _resetChat() async {
@@ -124,7 +444,12 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) {
       return;
     }
-    setState(_messages.clear);
+    setState(() {
+      _messages.clear();
+      _streamingMessage = null;
+      _activeMetrics = null;
+      _pendingSources = const [];
+    });
   }
 
   void _scrollToBottom() {
@@ -142,8 +467,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    if (_nativeInferenceActive) {
+      _channel.invokeMethod<bool>('cancelInference');
+    }
+    _channel.setMethodCallHandler(null);
     _channel.invokeMethod<void>('unloadModel');
+    _webSearchService.close();
+    _webpageContextService.close();
     _textController.dispose();
+    _webpageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -230,7 +562,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   itemCount: _messages.length + (_isGenerating ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == _messages.length) {
-                      return const _GeneratingBubble();
+                      return _GeneratingBubble(label: _generationStatus);
                     }
                     return _MessageBubble(message: _messages[index]);
                   },
@@ -242,28 +574,126 @@ class _ChatScreenState extends State<ChatScreen> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _textController,
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  FilterChip(
+                    avatar: const Icon(Icons.library_books_outlined, size: 18),
+                    label: const Text('Use Knowledge Base'),
+                    selected: _useKnowledgeBase,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useKnowledgeBase = selected;
+                              if (selected) {
+                                _useWebSearch = false;
+                                _useWebpage = false;
+                              }
+                            });
+                          },
+                  ),
+                  FilterChip(
+                    avatar: const Icon(Icons.public_rounded, size: 18),
+                    label: const Text('Search Wikipedia'),
+                    selected: _useWebSearch,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useWebSearch = selected;
+                              if (selected) {
+                                _useKnowledgeBase = false;
+                                _useWebpage = false;
+                              }
+                            });
+                          },
+                  ),
+                  FilterChip(
+                    avatar: const Icon(Icons.link_rounded, size: 18),
+                    label: const Text('Ask Webpage'),
+                    selected: _useWebpage,
+                    onSelected: _isGenerating
+                        ? null
+                        : (selected) {
+                            setState(() {
+                              _useWebpage = selected;
+                              if (selected) {
+                                _useKnowledgeBase = false;
+                                _useWebSearch = false;
+                              }
+                            });
+                          },
+                  ),
+                ],
+              ),
+              if (_useKnowledgeBase || _useWebSearch || _useWebpage) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _useKnowledgeBase
+                        ? 'Local sources • independent questions'
+                        : _useWebpage
+                        ? 'One public webpage • no API key required'
+                        : 'Free Wikipedia sources • internet required',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              if (_useWebpage) ...[
+                TextField(
+                  controller: _webpageController,
                   enabled: !_isGenerating,
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.send,
+                  keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.next,
+                  autocorrect: false,
                   decoration: const InputDecoration(
-                    hintText: 'Message the model...',
+                    labelText: 'Webpage URL',
+                    hintText: 'https://example.com/article',
+                    prefixIcon: Icon(Icons.link_rounded),
                     border: OutlineInputBorder(),
                   ),
-                  onSubmitted: (_) => _sendPrompt(),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                tooltip: 'Send',
-                onPressed: _isGenerating ? null : _sendPrompt,
-                icon: const Icon(Icons.send_rounded),
+                const SizedBox(height: 8),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !_isGenerating,
+                      minLines: 1,
+                      maxLines: 5,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText: _useKnowledgeBase
+                            ? 'Ask your local documents...'
+                            : _useWebpage
+                            ? 'Ask about this webpage...'
+                            : _useWebSearch
+                            ? 'Ask with web search...'
+                            : 'Message the model...',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    tooltip: _isGenerating ? 'Stop generating' : 'Send',
+                    onPressed: _isGenerating ? _cancelGeneration : _sendPrompt,
+                    icon: Icon(
+                      _isGenerating ? Icons.stop_rounded : Icons.send_rounded,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -276,10 +706,77 @@ class _ChatScreenState extends State<ChatScreen> {
 enum _MessageRole { user, assistant, error }
 
 class _ChatMessage {
-  const _ChatMessage({required this.role, required this.text});
+  _ChatMessage({
+    required this.role,
+    required this.text,
+    this.sources = const [],
+    this.metrics,
+    this.wasStopped = false,
+  });
 
   final _MessageRole role;
-  final String text;
+  String text;
+  final List<_MessageSource> sources;
+  _InferenceMetrics? metrics;
+  bool wasStopped;
+}
+
+enum _SourceType { local, web }
+
+class _MessageSource {
+  const _MessageSource({required this.label, required this.type, this.url});
+
+  final String label;
+  final _SourceType type;
+  final Uri? url;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _MessageSource &&
+      other.label == label &&
+      other.type == type &&
+      other.url == url;
+
+  @override
+  int get hashCode => Object.hash(label, type, url);
+}
+
+class _InferenceMetrics {
+  int? retrievalMilliseconds;
+  int? promptTokenCount;
+  double? promptSeconds;
+  int? generatedTokenCount;
+  double? generationSeconds;
+  int? totalMilliseconds;
+
+  bool get hasData =>
+      retrievalMilliseconds != null ||
+      promptSeconds != null ||
+      generationSeconds != null ||
+      totalMilliseconds != null;
+
+  String get summary {
+    final parts = <String>[];
+    if (retrievalMilliseconds case final milliseconds?) {
+      parts.add('Retrieval: $milliseconds ms');
+    }
+    if (promptSeconds case final seconds?) {
+      parts.add(
+        'Prompt: ${promptTokenCount ?? 0} tokens • '
+        '${seconds.toStringAsFixed(1)} s',
+      );
+    }
+    if (generationSeconds case final seconds?) {
+      parts.add(
+        'Output: ${generatedTokenCount ?? 0} tokens • '
+        '${seconds.toStringAsFixed(1)} s',
+      );
+    }
+    if (totalMilliseconds case final milliseconds?) {
+      parts.add('Total: ${(milliseconds / 1000).toStringAsFixed(1)} s');
+    }
+    return parts.join('\n');
+  }
 }
 
 class _MessageBubble extends StatelessWidget {
@@ -307,28 +804,98 @@ class _MessageBubble extends StatelessWidget {
               : colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Text(message.text),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message.text),
+            if (message.wasStopped) ...[
+              const SizedBox(height: 6),
+              Text('Stopped', style: Theme.of(context).textTheme.labelMedium),
+            ],
+            if (message.sources.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Text(
+                message.sources.any((source) => source.type == _SourceType.web)
+                    ? 'Web sources'
+                    : 'Local sources',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              for (final source in message.sources)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: source.url == null
+                      ? Text('• ${source.label}')
+                      : InkWell(
+                          onTap: () => _openSource(context, source.url!),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '• ${source.label}',
+                                  style: TextStyle(
+                                    color: colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.open_in_new_rounded, size: 14),
+                            ],
+                          ),
+                        ),
+                ),
+            ],
+            if (message.metrics?.hasData == true) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Text(
+                message.metrics!.summary,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openSource(BuildContext context, Uri url) async {
+    if (await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      return;
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open source.')));
+    }
   }
 }
 
 class _GeneratingBubble extends StatelessWidget {
-  const _GeneratingBubble();
+  const _GeneratingBubble({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.only(bottom: 12),
         child: Chip(
-          avatar: SizedBox(
+          avatar: const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          label: Text('Generating...'),
+          label: Text(label),
         ),
       ),
     );

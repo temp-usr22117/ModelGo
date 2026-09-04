@@ -1,5 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
+#include <algorithm>
+#include <atomic>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -13,8 +15,45 @@ static llama_context * g_ctx = nullptr;
 static std::mutex g_mutex;
 static std::vector<std::pair<std::string, std::string>> g_messages;
 static int32_t g_formatted_length = 0;
+static std::atomic<bool> g_cancel_requested{false};
 
 #define MODELGO_LOG(...) __android_log_print(ANDROID_LOG_INFO, "ModelGoNative", __VA_ARGS__)
+
+static bool should_abort_inference(void *) {
+    return g_cancel_requested.load(std::memory_order_relaxed);
+}
+
+static bool is_complete_utf8(const std::string & value) {
+    size_t index = 0;
+    while (index < value.size()) {
+        const auto byte = static_cast<unsigned char>(value[index]);
+        size_t sequence_length = 0;
+        if ((byte & 0x80U) == 0) {
+            sequence_length = 1;
+        } else if ((byte & 0xE0U) == 0xC0U) {
+            sequence_length = 2;
+        } else if ((byte & 0xF0U) == 0xE0U) {
+            sequence_length = 3;
+        } else if ((byte & 0xF8U) == 0xF0U) {
+            sequence_length = 4;
+        } else {
+            return false;
+        }
+
+        if (index + sequence_length > value.size()) {
+            return false;
+        }
+        for (size_t offset = 1; offset < sequence_length; ++offset) {
+            const auto continuation =
+                static_cast<unsigned char>(value[index + offset]);
+            if ((continuation & 0xC0U) != 0x80U) {
+                return false;
+            }
+        }
+        index += sequence_length;
+    }
+    return true;
+}
 
 static jstring to_jstring(JNIEnv * env, const std::string & value) {
     jbyteArray bytes = env->NewByteArray(static_cast<jsize>(value.size()));
@@ -100,6 +139,8 @@ Java_com_example_modelgo_MainActivity_loadModel(
     llama_context_params context_params = llama_context_default_params();
     context_params.n_ctx = 2048;
     context_params.n_batch = 512;
+    context_params.abort_callback = should_abort_inference;
+    context_params.abort_callback_data = nullptr;
 
     g_ctx = llama_init_from_model(g_model, context_params);
     if (g_ctx == nullptr) {
@@ -120,7 +161,8 @@ JNIEXPORT jstring JNICALL
 Java_com_example_modelgo_MainActivity_infer(
         JNIEnv * env,
         jobject,
-        jstring prompt) {
+        jstring prompt,
+        jobject callback) {
     const char * prompt_chars = env->GetStringUTFChars(prompt, nullptr);
     if (prompt_chars == nullptr) {
         return nullptr;
@@ -132,6 +174,26 @@ Java_com_example_modelgo_MainActivity_infer(
 
     if (g_model == nullptr || g_ctx == nullptr) {
         return to_jstring(env, "Error: no model is loaded.");
+    }
+
+    jclass callback_class = env->GetObjectClass(callback);
+    jmethodID on_token = env->GetMethodID(
+        callback_class,
+        "onToken",
+        "(Ljava/lang/String;)V");
+    jmethodID on_prompt_processed = env->GetMethodID(
+        callback_class,
+        "onPromptProcessed",
+        "(ID)V");
+    jmethodID on_generation_completed = env->GetMethodID(
+        callback_class,
+        "onGenerationCompleted",
+        "(IDZ)V");
+
+    if (on_token == nullptr ||
+        on_prompt_processed == nullptr ||
+        on_generation_completed == nullptr) {
+        return to_jstring(env, "Error: inference callbacks are unavailable.");
     }
 
     g_messages.emplace_back("user", std::move(user_prompt));
@@ -210,12 +272,46 @@ Java_com_example_modelgo_MainActivity_infer(
         return to_jstring(env, "Error: this conversation has reached the context limit. Start a new chat.");
     }
 
-    llama_batch batch = llama_batch_get_one(tokens.data(), token_count);
-    const int64_t generation_started = llama_time_us();
-    if (llama_decode(g_ctx, batch) != 0) {
+    const int64_t prompt_started = llama_time_us();
+    const int32_t maximum_batch = static_cast<int32_t>(llama_n_batch(g_ctx));
+    if (maximum_batch <= 0) {
         g_messages.pop_back();
-        return to_jstring(env, "Error: failed to process the prompt.");
+        return to_jstring(env, "Error: invalid model batch size.");
     }
+
+    for (int32_t offset = 0; offset < token_count; offset += maximum_batch) {
+        const int32_t batch_size = std::min(maximum_batch, token_count - offset);
+        llama_batch prompt_batch = llama_batch_get_one(
+            tokens.data() + offset,
+            batch_size);
+        if (llama_decode(g_ctx, prompt_batch) != 0) {
+            if (g_cancel_requested.load(std::memory_order_relaxed)) {
+                clear_chat();
+                env->CallVoidMethod(
+                    callback,
+                    on_generation_completed,
+                    0,
+                    0.0,
+                    JNI_TRUE);
+                return to_jstring(env, "");
+            }
+            g_messages.pop_back();
+            return to_jstring(env, "Error: failed to process the prompt.");
+        }
+    }
+
+    const double prompt_seconds =
+        static_cast<double>(llama_time_us() - prompt_started) / 1000000.0;
+    MODELGO_LOG(
+        "Processed %d prompt tokens in %.2f seconds (%.2f tokens/second)",
+        token_count,
+        prompt_seconds,
+        prompt_seconds > 0.0 ? token_count / prompt_seconds : 0.0);
+    env->CallVoidMethod(
+        callback,
+        on_prompt_processed,
+        token_count,
+        prompt_seconds);
 
     llama_sampler * sampler = llama_sampler_chain_init(
         llama_sampler_chain_default_params());
@@ -229,9 +325,20 @@ Java_com_example_modelgo_MainActivity_infer(
     llama_sampler_chain_add(sampler, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
     std::string response;
+    size_t emitted_size = 0;
     int32_t generated_tokens = 0;
+    const int64_t generation_started = llama_time_us();
     for (int i = 0; i < 128; ++i) {
-        const llama_token token = llama_sampler_sample(sampler, g_ctx, -1);
+        if (g_cancel_requested.load(std::memory_order_relaxed)) {
+            break;
+        }
+
+        llama_token token = llama_sampler_sample(sampler, g_ctx, -1);
+        for (int retry = 0;
+             response.empty() && llama_vocab_is_eog(vocab, token) && retry < 3;
+             ++retry) {
+            token = llama_sampler_sample(sampler, g_ctx, -1);
+        }
         if (llama_vocab_is_eog(vocab, token)) {
             break;
         }
@@ -261,6 +368,14 @@ Java_com_example_modelgo_MainActivity_infer(
             response.append(piece_buffer, static_cast<size_t>(piece_size));
         }
 
+        const std::string pending_text = response.substr(emitted_size);
+        if (!pending_text.empty() && is_complete_utf8(pending_text)) {
+            jstring streamed_text = to_jstring(env, pending_text);
+            env->CallVoidMethod(callback, on_token, streamed_text);
+            env->DeleteLocalRef(streamed_text);
+            emitted_size = response.size();
+        }
+
         const int32_t current_position =
             llama_memory_seq_pos_max(llama_get_memory(g_ctx), 0) + 1;
         if (current_position >= static_cast<int32_t>(llama_n_ctx(g_ctx))) {
@@ -268,14 +383,25 @@ Java_com_example_modelgo_MainActivity_infer(
         }
 
         llama_token next_token = token;
-        batch = llama_batch_get_one(&next_token, 1);
-        if (llama_decode(g_ctx, batch) != 0) {
+        llama_batch token_batch = llama_batch_get_one(&next_token, 1);
+        if (llama_decode(g_ctx, token_batch) != 0) {
+            if (g_cancel_requested.load(std::memory_order_relaxed)) {
+                break;
+            }
             break;
         }
         ++generated_tokens;
     }
 
+    if (emitted_size < response.size()) {
+        jstring streamed_text = to_jstring(env, response.substr(emitted_size));
+        env->CallVoidMethod(callback, on_token, streamed_text);
+        env->DeleteLocalRef(streamed_text);
+    }
+
     llama_sampler_free(sampler);
+    const bool was_cancelled =
+        g_cancel_requested.load(std::memory_order_relaxed);
     const double generation_seconds =
         static_cast<double>(llama_time_us() - generation_started) / 1000000.0;
     MODELGO_LOG(
@@ -283,17 +409,44 @@ Java_com_example_modelgo_MainActivity_infer(
         generated_tokens,
         generation_seconds,
         generation_seconds > 0.0 ? generated_tokens / generation_seconds : 0.0);
-    g_messages.emplace_back("assistant", response);
-    chat_messages = make_chat_messages();
-    g_formatted_length = llama_chat_apply_template(
-        chat_template,
-        chat_messages.data(),
-        chat_messages.size(),
-        false,
-        nullptr,
-        0);
+    env->CallVoidMethod(
+        callback,
+        on_generation_completed,
+        generated_tokens,
+        generation_seconds,
+        was_cancelled ? JNI_TRUE : JNI_FALSE);
+
+    if (was_cancelled) {
+        clear_chat();
+    } else {
+        g_messages.emplace_back("assistant", response);
+        chat_messages = make_chat_messages();
+        g_formatted_length = llama_chat_apply_template(
+            chat_template,
+            chat_messages.data(),
+            chat_messages.size(),
+            false,
+            nullptr,
+            0);
+    }
 
     return to_jstring(env, response);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_modelgo_MainActivity_prepareInference(
+        JNIEnv *,
+        jobject) {
+    g_cancel_requested.store(false, std::memory_order_relaxed);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_modelgo_MainActivity_cancelInference(
+        JNIEnv *,
+        jobject) {
+    g_cancel_requested.store(true, std::memory_order_relaxed);
 }
 
 extern "C"
@@ -302,6 +455,7 @@ Java_com_example_modelgo_MainActivity_resetChat(
         JNIEnv *,
         jobject) {
     std::lock_guard<std::mutex> lock(g_mutex);
+    g_cancel_requested.store(false, std::memory_order_relaxed);
     clear_chat();
 }
 
@@ -311,6 +465,7 @@ Java_com_example_modelgo_MainActivity_unloadModel(
         JNIEnv *,
         jobject) {
     std::lock_guard<std::mutex> lock(g_mutex);
+    g_cancel_requested.store(false, std::memory_order_relaxed);
 
     if (g_ctx != nullptr) {
         llama_free(g_ctx);

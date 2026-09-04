@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'download_models.dart';
+import 'knowledge_base.dart';
 import 'my_models.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -14,10 +15,7 @@ class DashboardScreen extends StatelessWidget {
           padding: const EdgeInsets.all(8),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(9),
-            child: Image.asset(
-              'assets/icon/modelgo.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/icon/modelgo.png', fit: BoxFit.cover),
           ),
         ),
         title: const Text('ModelGo'),
@@ -30,10 +28,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               const Text(
                 'Run AI locally',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 8),
@@ -41,10 +36,7 @@ class DashboardScreen extends StatelessWidget {
               const Text(
                 'Download quantized models and run them directly '
                 'on your Android device.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
 
               const SizedBox(height: 28),
@@ -72,41 +64,25 @@ class DashboardScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const MyModelsScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const MyModelsScreen()),
                   );
                 },
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
-              const Text(
-                'Recent Models',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.grey.shade300,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'No models downloaded yet.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
+              _DashboardCard(
+                icon: Icons.library_books_rounded,
+                title: 'Knowledge Base',
+                description: 'Import local documents for grounded answers.',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const KnowledgeBaseScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -140,7 +116,7 @@ class _DashboardCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.grey.shade300,
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Row(
@@ -172,12 +148,7 @@ class _DashboardCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
+                  Text(description, style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             ),

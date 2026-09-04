@@ -14,9 +14,15 @@ void main() {
   testWidgets('shows the ModelGo dashboard', (WidgetTester tester) async {
     await tester.pumpWidget(MyApp());
 
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.dark);
+    expect(app.darkTheme?.brightness, Brightness.dark);
+    expect(app.darkTheme?.scaffoldBackgroundColor, const Color(0xFF111318));
+
     expect(find.text('ModelGo'), findsOneWidget);
     expect(find.text('Download Models'), findsOneWidget);
     expect(find.text('My Models'), findsOneWidget);
+    expect(find.text('Knowledge Base'), findsOneWidget);
 
     await tester.tap(find.text('Download Models'));
     await tester.pumpAndSettle();
