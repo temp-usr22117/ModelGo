@@ -671,7 +671,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       enabled: !_isGenerating,
                       minLines: 1,
                       maxLines: 5,
-                      textInputAction: TextInputAction.send,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
                       decoration: InputDecoration(
                         hintText: _useKnowledgeBase
                             ? 'Ask your local documents...'
@@ -682,7 +683,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             : 'Message the model...',
                         border: const OutlineInputBorder(),
                       ),
-                      onSubmitted: (_) => _sendPrompt(),
                     ),
                   ),
                   const SizedBox(width: 8),

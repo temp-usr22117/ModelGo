@@ -28,6 +28,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF6677FF),
+      brightness: Brightness.dark,
+    );
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ModelProvider>(create: (_) => ModelProvider()),
@@ -35,7 +40,24 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'ModelGo',
-        theme: ThemeData(primarySwatch: Colors.blue),
+        debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.dark,
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          colorScheme: colorScheme,
+          scaffoldBackgroundColor: const Color(0xFF111318),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF111318),
+            surfaceTintColor: Colors.transparent,
+          ),
+          cardColor: const Color(0xFF1A1D24),
+          inputDecorationTheme: const InputDecorationTheme(
+            filled: true,
+            fillColor: Color(0xFF1A1D24),
+            border: OutlineInputBorder(),
+          ),
+        ),
         home: const DashboardScreen(),
       ),
     );
